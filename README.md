@@ -1,0 +1,22 @@
+# VR OS (stage 1: stereo + head tracking + gaze launcher)
+
+Browser VR OS for iPhone 7 + Cardboard-style headset. No WebXR: manual side-by-side stereo with barrel distortion.
+
+## Deploy to GitHub Pages
+1. Create a new GitHub repo (e.g. `vr-os`) and push this folder to its `main` branch.
+2. Repo **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+3. Push to `main` (or Actions tab → "Deploy to GitHub Pages" → Run workflow). Wait for green.
+4. On the iPhone open `https://<user>.github.io/<repo>/` in Safari (HTTPS is required for motion sensors).
+5. Share → **Add to Home Screen**, launch from the icon (standalone = no Safari bars), rotate to landscape, tap **Enter VR**, allow motion access.
+
+Pull requests run lint + build (`.github/workflows/ci.yml`).
+
+## Local dev
+`npm ci && npm run dev` (plain HTTP: motion sensors won't work off-localhost on iOS; use drag-to-look, or test on Pages).
+
+## Controls
+- Gaze at an icon ~1.2 s to click. **Recenter** / **Debug** buttons on the home panel. Two-finger tap = FPS overlay (or `?debug`).
+- Dynamic resolution drops render scale (min 50%) if FPS < 45. Pixel ratio capped at 1.5.
+
+## Not yet (later stages)
+PC stream (2), hand tracking (3), Settings/Browser/AR apps, audio, NoSleep (4).
