@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { R, makePanel, card, text, disposeTree } from './kit.js';
+import { R, makePanel, canvasTex, card, text, disposeTree } from './kit.js';
 import { apps } from '../apps/stubs.js';
 
 const pad = (n) => String(n).padStart(2, '0');
@@ -17,12 +17,12 @@ export class Launcher {
     if (navigator.getBattery) navigator.getBattery().then((b) => { this.battery = b; }).catch(() => {});
 
     // Status bar (redrawn when its text changes)
-    this.statusPanel = makePanel({ w: 1.9, h: 0.24, r: R, y: 1.7, px: 512, draw: () => {} });
+    this.statusPanel = makePanel({ w: 1.9, h: 0.24, r: R, y: 1.3, px: 512, draw: () => {} });
     this.home.add(this.statusPanel);
 
     // Main curved panel
     this.home.add(makePanel({
-      w: 4.2, h: 2.0, y: 0.4, px: 1024,
+      w: 4.2, h: 1.8, y: 0.25, px: 1024,
       draw: (g, w, h) => {
         card(g, w, h);
         text(g, 'VR OS', w / 2, h * 0.3, 120, { weight: '700' });
@@ -30,28 +30,45 @@ export class Launcher {
         text(g, 'Stage 1 · vertical slice', w / 2, h * 0.62, 32, { color: '#6c7fb0' });
       },
     }));
-    this.addHomeButton('Recenter', -12, () => actions.recenter());
-    this.addHomeButton('Debug', 12, () => actions.toggleDebug());
+    this.addHomeButton('Recenter', -19, () => actions.recenter());
+    this.addHomeButton('Flip axis', 0, () => actions.flipAxis());
+    this.addHomeButton('Debug', 19, () => actions.toggleDebug());
 
-    // Dock
-    this.home.add(makePanel({ w: 3.0, h: 0.95, y: -1.3, px: 768, draw: (g, w, h) => card(g, w, h, 'rgba(255,255,255,.10)', 60) }));
-    apps.forEach((app, i) => {
-      const b = makePanel({
-        w: 0.62, h: 0.78, r: R - 0.03, angle: -22.5 + i * 15, y: -1.3, px: 192, interactive: true,
-        draw: (g, w, h) => {
-          card(g, w, h, 'rgba(255,255,255,.14)', 36);
-          text(g, app.icon, w / 2, h * 0.42, 84);
-          text(g, app.name, w / 2, h * 0.84, 24);
-        },
-        onClick: () => this.openApp(app),
-      });
-      this.home.add(b); this.homeBtns.push(b);
+    // 3D dock: a wooden console table with app cubes that lift toward you when gazed at
+    const wood = new THREE.MeshLambertMaterial({ color: 0x8b6b4a });
+    const top = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.08, 0.8), wood);
+    top.position.set(0, -1.1, -2.55); this.home.add(top);
+    [[-1.15, -2.25], [1.15, -2.25], [-1.15, -2.85], [1.15, -2.85]].forEach(([x, z]) => {
+      const l = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.46, 0.08), wood);
+      l.position.set(x, -1.37, z); this.home.add(l);
     });
+    this.cubes = [];
+    apps.forEach((app, i) => {
+      const tex = canvasTex(192, 192, (g, w, h) => {
+        card(g, w, h, 'rgba(30,40,80,1)', 36);
+        text(g, app.icon, w / 2, h * 0.42, 84);
+        text(g, app.name, w / 2, h * 0.84, 24);
+      });
+      const front = new THREE.MeshBasicMaterial({ map: tex, color: 0xb8c4e0 });
+      const side = new THREE.MeshLambertMaterial({ color: 0x3a4a86 });
+      const m = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.2), [side, side, side, side, front, side]);
+      m.userData = { interactive: true, mats: [front], onClick: () => this.openApp(app), ang: ((-22.5 + i * 15) * Math.PI) / 180, h: 0 };
+      m.rotation.y = -m.userData.ang;
+      this.placeCube(m);
+      this.home.add(m); this.homeBtns.push(m); this.cubes.push(m);
+    });
+  }
+
+  placeCube(m) {
+    const { ang, h } = m.userData;
+    const r = 2.55 - 0.18 * h;
+    m.position.set(Math.sin(ang) * r, -0.8 + 0.04 * h, -Math.cos(ang) * r);
+    m.scale.setScalar(1 + 0.12 * h);
   }
 
   addHomeButton(label, angle, onClick) {
     const b = makePanel({
-      w: 0.9, h: 0.34, r: R - 0.03, angle, y: -0.2, px: 256, interactive: true,
+      w: 0.9, h: 0.34, r: R - 0.03, angle, y: -0.15, px: 256, interactive: true,
       draw: (g, w, h) => { card(g, w, h, 'rgba(79,124,255,.55)', 40); text(g, label, w / 2, h / 2, 40, { weight: '600' }); },
       onClick,
     });
@@ -100,7 +117,11 @@ export class Launcher {
 
   setExtra(s) { this.extra = s; }
 
-  update(dt) {
+  update(dt, hover) {
+    this.cubes.forEach((m) => {
+      m.userData.h += ((hover === m ? 1 : 0) - m.userData.h) * Math.min(1, dt * 12);
+      this.placeCube(m);
+    });
     const w = this.win;
     if (w) {
       w.t = Math.max(0, Math.min(1, w.t + (w.closing ? -dt : dt) / 0.25));

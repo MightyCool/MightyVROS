@@ -22,7 +22,7 @@ export class Gaze {
     head.add(this.group);
   }
 
-  static tint(m, on) { if (m) m.material.color.setHex(on ? 0xffffff : 0xb8c4e0); }
+  static tint(m, on) { if (m) (m.userData.mats || [m.material]).forEach((x) => x.color.setHex(on ? 0xffffff : 0xb8c4e0)); }
 
   update(dt, targets) {
     this.head.getWorldQuaternion(this.q);
