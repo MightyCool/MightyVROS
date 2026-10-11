@@ -92,6 +92,7 @@ export class Launcher {
     group.add(frame, close); btns.push(close);
     const ctx = {
       parent: group,
+      frame,
       text: (lines) => group.add(makePanel({
         w: 3.3, h: 1.5, r: R - 0.2, y: 0.3, px: 1024,
         draw: (g, w, h) => lines.forEach((l, i) => text(g, l, w / 2, h * (0.2 + i * 0.15), i === 0 ? 76 : 40, { color: i === 0 ? '#fff' : '#9fb0d8', weight: i === 0 ? '700' : '500' })),

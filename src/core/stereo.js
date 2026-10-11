@@ -58,15 +58,14 @@ export class StereoRenderer {
       c.updateProjectionMatrix();
     });
     this.head.updateMatrixWorld(true);
-    r.setRenderTarget(rt);
-    rt.scissorTest = false; rt.viewport.set(0, 0, w, h); rt.scissor.set(0, 0, w, h);
-    r.clear();
-    rt.scissorTest = true;
+    const half = Math.floor(w / 2);
     for (let i = 0; i < 2; i++) {
-      const x = i * Math.floor(w / 2);
-      rt.viewport.set(x, 0, Math.floor(w / 2), h);
-      rt.scissor.set(x, 0, Math.floor(w / 2), h);
-      r.render(scene, this.eyes[i]);
+      // three copies viewport/scissor inside setRenderTarget(), so set them first, then (re)bind
+      rt.viewport.set(i * half, 0, half, h);
+      rt.scissor.set(i * half, 0, half, h);
+      rt.scissorTest = true;
+      r.setRenderTarget(rt);
+      r.render(scene, this.eyes[i]); // autoClear clears just this eye's scissor region
     }
     r.setRenderTarget(null);
     const u = this.mat.uniforms;

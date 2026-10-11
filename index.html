@@ -14,12 +14,14 @@
 html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#e8edff;font:16px -apple-system,system-ui,sans-serif;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 #gl{width:100%;height:100%;display:block}
 #hud{position:fixed;top:6px;left:8px;font:12px monospace;color:#7CFC9A;white-space:pre}
-#intro{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:#0b0f1a;text-align:center;padding:16px;box-sizing:border-box}
+#intro{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:safe center;gap:10px;background:#0b0f1a;text-align:center;padding:16px;box-sizing:border-box;overflow-y:auto;touch-action:pan-y}
 #intro h1{margin:0;font-size:28px}
 #intro p,#intro li{max-width:520px;margin:2px 0;color:#9fb0d8;font-size:14px}
 #intro ul{padding-left:18px;text-align:left}
 #start{font-size:20px;padding:12px 32px;border:0;border-radius:28px;background:#4f7cff;color:#fff}
 #start:disabled{opacity:.5}
+input{-webkit-user-select:text;user-select:text;font-size:18px;padding:8px 12px;border-radius:10px;border:1px solid #33437a;background:#121a33;color:#fff;text-align:center;text-transform:uppercase;width:200px}
+#pcv{position:fixed;left:-9999px;width:2px;height:2px}
 [hidden]{display:none!important}
 #msg{color:#ffb86b;min-height:1.2em}
 #rotate{display:none;position:fixed;inset:0;z-index:9;background:#0b0f1a;align-items:center;justify-content:center;font-size:22px}
@@ -29,15 +31,17 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#e8edff;fon
 <body>
 <canvas id="gl"></canvas>
 <div id="hud" hidden></div>
+<video id="pcv" muted playsinline autoplay></video>
 <div id="rotate">Rotate your phone to landscape</div>
 <div id="intro">
   <h1>VR OS</h1>
-  <p>Stage 1: stereo rendering, head tracking, launcher with gaze input.</p>
+  <p>Stereo rendering, head tracking, 3D launcher with gaze input, PC stream.</p>
   <ul>
     <li>Add to Home Screen first for fullscreen (Share → Add to Home Screen).</li>
     <li>Hold the phone in landscape, then tap Enter VR and allow motion access.</li>
     <li>Look at an icon and hold your gaze to open it.</li>
   </ul>
+  <input id="code" maxlength="6" placeholder="PC code (optional)" autocapitalize="characters" autocomplete="off" spellcheck="false">
   <button id="start">Enter VR</button>
   <p id="msg"></p>
 </div>

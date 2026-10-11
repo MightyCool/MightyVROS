@@ -21,8 +21,12 @@ if (new URLSearchParams(location.search).has('debug')) settings.debug = true;
 
 const tracker = new HeadTracker(settings);
 
+const codeEl = $('code');
+try { codeEl.value = localStorage.getItem('vros.pccode') || ''; } catch { /* storage unavailable */ }
+
 startBtn.addEventListener('click', async () => {
   startBtn.disabled = true;
+  try { localStorage.setItem('vros.pccode', codeEl.value.trim().toUpperCase()); } catch { /* storage unavailable */ }
   try { await tracker.enable(); } catch (e) { msg.textContent = e.message; }
   try { boot(); } catch (e) { msg.textContent = 'Could not start: ' + e.message; startBtn.disabled = false; return; }
   $('intro').hidden = true;
