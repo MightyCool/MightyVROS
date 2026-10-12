@@ -12,7 +12,10 @@ video{width:100%;margin-top:16px;border-radius:8px;background:#000}
 <div>Resolution <select id="res"><option value="1280x720" selected>720p (recommended)</option><option value="1920x1080">1080p</option></select>
 Bitrate <select id="kbps"><option value="2000">2 Mbps</option><option value="4000" selected>4 Mbps</option><option value="8000">8 Mbps</option></select></div>
 <button id="share">Share my screen</button>
+<p style="color:#9fb0d8;font-size:14px;margin:4px 0">Choose <b>Entire Screen</b> (your main monitor) and tick <b>Share system audio</b>.</p>
 <div id="code"></div>
+<div id="approve" hidden style="background:#1b2a55;padding:12px;border-radius:8px;margin:8px 0">Headset <b id="who"></b> wants to connect (view + control this PC). <button id="allow">Allow</button><button id="deny" style="background:#a33">Deny</button></div>
+<div id="ctrl" style="color:#9fb0d8;font-size:14px"></div>
 <div id="status">Pick resolution, click Share, choose your screen.</div>
 <video id="pv" muted autoplay playsinline></video>
 <script src="peerjs.min.js"></script>

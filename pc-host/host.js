@@ -1,9 +1,20 @@
-/* VR OS PC host: captures the screen and streams it to the headset phone over WebRTC (PeerJS cloud for pairing only). */
+/* VR OS PC host: streams the screen to the headset phone (WebRTC, PeerJS cloud only for pairing)
+   and forwards the headset's mouse/keyboard messages to the local helper (host.py). */
 const $ = (id) => document.getElementById(id);
 const ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const randCode = () => Array.from({ length: 6 }, () => ABC[Math.floor(Math.random() * ABC.length)]).join('');
 const say = (s) => { $('status').textContent = s; };
-let stream = null, peer = null, call = null;
+let stream = null, peer = null, call = null, approved = null, helper = false;
+
+fetch('/ping').then((r) => r.text()).then((t) => { helper = t === 'ok'; }).catch(() => {}).finally(() => {
+  $('ctrl').textContent = helper
+    ? 'Remote control: ready (the headset can move the mouse and type once you click Allow).'
+    : 'Remote control: OFF. Run "python host.py" and open http://localhost:8765 to enable it (viewing still works).';
+});
+
+const postInput = (m) => fetch('/input', {
+  method: 'POST', headers: { 'Content-Type': 'application/json', 'X-VROS': '1' }, body: JSON.stringify(m),
+}).catch(() => {});
 
 // Prefer H.264 (hardware-decoded on iPhone) and cap the bitrate.
 function preferH264(sdp) {
@@ -31,11 +42,20 @@ function register() {
   peer.on('error', (e) => { if (e.type === 'unavailable-id') register(); else say('Signaling error: ' + e.type); });
   peer.on('connection', (conn) => {
     conn.on('open', () => {
-      if (call) call.close();
-      call = peer.call(conn.peer, stream, { sdpTransform: preferH264 });
-      call.on('close', () => say('Headset disconnected. Open PC Stream again to reconnect.'));
-      say('Headset connected. Streaming.');
+      // Anyone who learns the code could otherwise watch/control the PC, so every headset must be approved here.
+      $('who').textContent = conn.peer.slice(-6);
+      $('approve').hidden = false;
+      $('allow').onclick = () => {
+        $('approve').hidden = true;
+        approved = conn;
+        if (call) call.close();
+        call = peer.call(conn.peer, stream, { sdpTransform: preferH264 });
+        call.on('close', () => say('Headset disconnected. Open PC Stream again to reconnect.'));
+        say('Headset connected. Streaming.');
+      };
+      $('deny').onclick = () => { $('approve').hidden = true; conn.close(); };
     });
+    conn.on('data', (d) => { if (approved === conn && helper) postInput(d); });
   });
 }
 
@@ -43,12 +63,14 @@ $('share').addEventListener('click', async () => {
   try {
     const [w, h] = $('res').value.split('x').map(Number);
     stream = await navigator.mediaDevices.getDisplayMedia({
-      video: { width: { ideal: w }, height: { ideal: h }, frameRate: { ideal: 30 } }, audio: false,
+      video: { width: { ideal: w }, height: { ideal: h }, frameRate: { ideal: 30 } },
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
     });
-  } catch (e) { say('Screen capture failed: ' + e.message + ' (if opened as a file, use: python -m http.server 8080 and open http://localhost:8080)'); return; }
+  } catch (e) { say('Screen capture failed: ' + e.message); return; }
   const track = stream.getVideoTracks()[0];
   track.contentHint = 'detail';
   track.onended = () => say('Screen sharing stopped.');
   $('pv').srcObject = stream;
+  say(stream.getAudioTracks().length ? 'Sharing screen + audio.' : 'Sharing screen (no audio: tick "Share system audio" in the picker, choose Entire Screen).');
   register();
 });

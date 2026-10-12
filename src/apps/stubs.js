@@ -1,4 +1,6 @@
 import { pcStream } from './pcstream.js';
+import { browser } from './browser.js';
+import { settingsApp } from './settings.js';
 
 /** App API: { id, name, icon, init(ctx), update(dt), dispose() }. ctx = { text(lines), button(opts), parent }. */
 const stub = (id, name, icon, stage, desc) => ({
@@ -9,8 +11,8 @@ const stub = (id, name, icon, stage, desc) => ({
 });
 
 export const apps = [
-  stub('settings', 'Settings', '⚙️', 4, 'Input mode, IPD, FOV, render scale, volume.'),
-  stub('browser', 'Browser', '🌐', 4, 'Floating web panel with keyboard.'),
+  settingsApp,
+  browser,
   pcStream,
   stub('ar', 'AR Game', '🎯', 4, 'Camera passthrough, pop the targets.'),
 ];

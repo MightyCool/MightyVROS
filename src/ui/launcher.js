@@ -43,19 +43,33 @@ export class Launcher {
       l.position.set(x, -1.37, z); this.home.add(l);
     });
     this.cubes = [];
+    const glowTex = canvasTex(64, 64, (g, w, h) => {
+      const gr = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+      gr.addColorStop(0, 'rgba(140,180,255,1)'); gr.addColorStop(0.5, 'rgba(100,140,255,.45)'); gr.addColorStop(1, 'rgba(100,140,255,0)');
+      g.fillStyle = gr; g.fillRect(0, 0, w, h);
+    });
     apps.forEach((app, i) => {
       const tex = canvasTex(192, 192, (g, w, h) => {
         card(g, w, h, 'rgba(30,40,80,1)', 36);
         text(g, app.icon, w / 2, h * 0.42, 84);
         text(g, app.name, w / 2, h * 0.84, 24);
       });
-      const front = new THREE.MeshBasicMaterial({ map: tex, color: 0xb8c4e0 });
+      const front = new THREE.MeshBasicMaterial({ map: tex, color: 0xa8b4d4 });
       const side = new THREE.MeshLambertMaterial({ color: 0x3a4a86 });
-      const m = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.2), [side, side, side, side, front, side]);
-      m.userData = { interactive: true, mats: [front], onClick: () => this.openApp(app), ang: ((-22.5 + i * 15) * Math.PI) / 180, h: 0 };
-      m.rotation.y = -m.userData.ang;
-      this.placeCube(m);
-      this.home.add(m); this.homeBtns.push(m); this.cubes.push(m);
+      const cube = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.2), [side, side, side, side, front, side]);
+      cube.userData = { ang: ((-22.5 + i * 15) * Math.PI) / 180, h: 0 };
+      cube.rotation.y = -cube.userData.ang;
+      // additive glow behind the cube: it can only ever brighten
+      const glow = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.95), new THREE.MeshBasicMaterial({
+        map: glowTex, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending,
+      }));
+      glow.position.z = -0.11; cube.add(glow); cube.userData.glow = glow;
+      // invisible, larger hit box (child, so it grows with the hover lift = built-in hysteresis)
+      const hit = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.75, 0.5), new THREE.MeshBasicMaterial({ visible: false }));
+      hit.userData = { interactive: true, mats: [front], owner: cube, onClick: () => this.openApp(app) };
+      cube.add(hit);
+      this.placeCube(cube);
+      this.home.add(cube); this.homeBtns.push(hit); this.cubes.push(cube);
     });
   }
 
@@ -93,6 +107,8 @@ export class Launcher {
     const ctx = {
       parent: group,
       frame,
+      actions: this.actions,
+      target: (m) => { btns.push(m); return m; },
       text: (lines) => group.add(makePanel({
         w: 3.3, h: 1.5, r: R - 0.2, y: 0.3, px: 1024,
         draw: (g, w, h) => lines.forEach((l, i) => text(g, l, w / 2, h * (0.2 + i * 0.15), i === 0 ? 76 : 40, { color: i === 0 ? '#fff' : '#9fb0d8', weight: i === 0 ? '700' : '500' })),
@@ -120,7 +136,8 @@ export class Launcher {
 
   update(dt, hover) {
     this.cubes.forEach((m) => {
-      m.userData.h += ((hover === m ? 1 : 0) - m.userData.h) * Math.min(1, dt * 12);
+      m.userData.h += ((hover && hover.userData.owner === m ? 1 : 0) - m.userData.h) * Math.min(1, dt * 12);
+      m.userData.glow.material.opacity = m.userData.h * 0.9;
       this.placeCube(m);
     });
     const w = this.win;

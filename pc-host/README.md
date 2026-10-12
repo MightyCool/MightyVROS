@@ -1,10 +1,26 @@
-# VR OS PC host (simple version)
+# VR OS PC host
 
-Streams your PC screen to the VR OS **PC Stream** app. Needs Chrome or Edge on the PC and internet access on both devices
-(PeerJS cloud is used only to pair; video then goes directly between devices, ideally over your Wi-Fi).
+Streams your PC screen (and audio) to the VR OS **PC Stream** app and lets the headset move the mouse, click, scroll and type.
+This is how you get a full browser (YouTube etc.) in VR: run Chrome on the PC, control it from the headset.
 
-1. Open `index.html` in Chrome/Edge. If screen capture is blocked, run `python -m http.server 8080` in this folder and open http://localhost:8080 instead.
-2. Choose resolution/bitrate (720p / 4 Mbps is best for iPhone 7), click **Share my screen**, pick the screen, and note the 6-character code.
-3. On the phone start screen, type the code, tap **Enter VR**, then gaze at **PC Stream**. Gaze at **Reconnect** to retry.
+## Setup (once)
+1. Install Python 3 and run `pip install pyautogui`.
+   (macOS: allow Terminal/Python under System Settings > Privacy > Accessibility and Screen Recording.)
 
-Limits: no mouse/keyboard control yet (a browser page cannot move the OS mouse; that needs a native helper). No audio. Strict NATs without TURN may fail to connect.
+## Every time
+1. In this folder run `python host.py`, then open **http://localhost:8765** in Chrome or Edge.
+2. Pick resolution/bitrate (720p / 4 Mbps suits the iPhone 7), click **Share my screen**, choose **Entire Screen** (your main monitor)
+   and tick **Share system audio**. Note the 6-character code.
+3. On the phone start screen type the code, tap **Enter VR**, gaze at **PC Stream**.
+4. Click **Allow** on the PC page when the headset asks. Open Chrome on the PC and go to YouTube.
+
+## Using it in VR
+- Move your head: the PC mouse follows your gaze. Hold still ~1 s: the ring shrinks and clicks.
+- Look at the far right edge: top half scrolls up, bottom half scrolls down.
+- **⌨ Keys** shows a gaze keyboard (0.7 s per key) for search boxes.
+
+## Notes
+- Without `host.py` (e.g. opening index.html directly) you still get view-only streaming.
+- Only the approved headset can send input, and `host.py` listens on 127.0.0.1 only.
+- Mouse mapping assumes you share your main monitor.
+- Needs internet for PeerJS pairing; strict NATs without TURN may fail.

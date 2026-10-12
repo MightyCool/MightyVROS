@@ -8,7 +8,7 @@ export function canvasTex(w, h, draw) {
   const g = c.getContext('2d');
   draw(g, w, h);
   const t = new THREE.CanvasTexture(c);
-  t.minFilter = THREE.LinearFilter; t.generateMipmaps = false;
+  t.minFilter = THREE.LinearMipmapLinearFilter; t.generateMipmaps = true; t.anisotropy = 4;
   return t;
 }
 
@@ -31,7 +31,7 @@ export function curvedGeometry(w, h, r) {
 export function makePanel({ w, h, r = R, angle = 0, y = 0, px = 256, draw, interactive = false, onClick }) {
   const tex = canvasTex(px, Math.round((px * h) / w), draw);
   const m = new THREE.Mesh(curvedGeometry(w, h, r), new THREE.MeshBasicMaterial({
-    map: tex, transparent: true, depthWrite: false, color: interactive ? 0xb8c4e0 : 0xffffff,
+    map: tex, transparent: true, depthWrite: false, color: interactive ? 0xa8b4d4 : 0xffffff,
   }));
   m.rotation.y = (-angle * Math.PI) / 180;
   m.position.y = y;
