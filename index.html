@@ -22,7 +22,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#000;color:#e8edff;fon
 #start:disabled{opacity:.5}
 input{-webkit-user-select:text;user-select:text;font-size:18px;padding:8px 12px;border-radius:10px;border:1px solid #33437a;background:#121a33;color:#fff;text-align:center;text-transform:uppercase;width:200px}
 body.web #gl{visibility:hidden}
-#pcv{position:fixed;left:-9999px;width:2px;height:2px}
+#pcv,#ptv{position:fixed;left:-9999px;width:2px;height:2px}
 [hidden]{display:none!important}
 #msg{color:#ffb86b;min-height:1.2em}
 #rotate{display:none;position:fixed;inset:0;z-index:9;background:#0b0f1a;align-items:center;justify-content:center;font-size:22px}
@@ -33,6 +33,7 @@ body.web #gl{visibility:hidden}
 <canvas id="gl"></canvas>
 <div id="hud" hidden></div>
 <video id="pcv" playsinline autoplay></video>
+<video id="ptv" muted playsinline autoplay></video>
 <div id="rotate">Rotate your phone to landscape</div>
 <div id="intro">
   <h1>VR OS</h1>

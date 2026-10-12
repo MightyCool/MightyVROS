@@ -13,6 +13,7 @@ function layout(row) {
 }
 const BAR = [['back', 0, 0.07], ['fwd', 0.07, 0.14], ['reload', 0.14, 0.21], ['url', 0.21, 0.66], ['kbd', 0.66, 0.76], ['go', 0.76, 0.87], ['web', 0.87, 1]];
 const LABEL = { back: '◀', fwd: '▶', reload: '⟳', kbd: '⌨', go: 'Go', web: 'Web' };
+const VIS = 20; // visible text lines
 const WELCOME = 'VR Browser\n\nType a web address or a search term with the keyboard, then look at Go for a text reader view, or Web for a real web window (iframe, touch-scroll only; YouTube links become embeds).\n\nMost websites forbid being embedded in other pages, so this browser shows a text-only "reader" version of each page, fetched through a reader proxy (default r.jina.ai). No images, scripts or logins. For full websites use the PC Stream app.';
 
 /** Browser app: 3D address bar, gaze keyboard, text reader view through a CORS-friendly reader proxy. */
@@ -25,27 +26,30 @@ export const browser = {
     ctx.frame.visible = false;
     Object.assign(this, { closed: false, tok: 0, hist: [], pos: -1, input: '', scroll: 0, lines: [], hk: null, hb: null });
     this.measure = document.createElement('canvas').getContext('2d');
-    const mk = (opts, extra) => { const m = ctx.button(opts); m.material.color.setHex(0xffffff); Object.assign(m.userData, { mats: [] }, extra); return m; };
+    const mk = (opts, extra) => { const m = ctx.button({ ...opts, hl: false }); m.material.color.setHex(0xffffff); Object.assign(m.userData, { mats: [] }, extra); return m; };
 
-    this.bar = mk({ w: 2.8, h: 0.3, r: 2.85, angle: -4, y: 1.2, px: 1024, draw: () => {} }, {
+    this.bar = mk({ w: 3.4, h: 0.3, r: 2.85, angle: 0, y: 1.15, px: 1024, draw: () => {} }, {
       region: (uv) => { const b = BAR.find(([, a, z]) => uv.x >= a && uv.x < z); return b ? b[0] : null; },
       onHover: (id) => { this.hb = id; this.drawBar(); },
       onClick: (id) => this.barClick(id),
     });
-    this.content = mk({ w: 3.8, h: 1.5, r: 2.85, y: 0.2, px: 1536, draw: () => {} }, {
+    this.content = mk({ w: 3.8, h: 1.9, r: 2.85, y: 0, px: 1536, draw: () => {} }, {
       region: (uv) => (uv.x > 0.93 ? (uv.y > 0.5 ? 'up' : 'down') : null),
       dwell: 0.5, repeat: true,
-      onClick: (id) => { this.scroll = Math.max(0, Math.min(Math.max(0, this.lines.length - 16), this.scroll + (id === 'up' ? -6 : 6))); this.drawContent(); },
+      onClick: (id) => { this.scroll = Math.max(0, Math.min(Math.max(0, this.lines.length - VIS), this.scroll + (id === 'up' ? -6 : 6))); this.drawContent(); },
     });
-    this.kb = mk({ w: 3.4, h: 0.95, r: 2.8, y: -0.7, px: 1024, draw: () => {} }, {
+    this.kb = mk({ w: 3.4, h: 1.6, r: 2.8, y: 0, px: 1024, draw: () => {} }, {
       region: (uv) => { const ri = Math.min(4, Math.floor((1 - uv.y) * 5)); const c = layout(ROWS[ri]).find((q) => uv.x >= q.x && uv.x < q.x + q.w); return c ? c.k : null; },
       dwell: 0.7,
       onHover: (id) => { this.hk = id; this.drawKb(); },
       onClick: (id) => this.key(id),
     });
+    this.kb.visible = false; // keyboard and page share one area: only one is shown at a time
     this.drawBar(); this.drawKb();
     this.setBody(WELCOME);
   },
+
+  setKb(on) { this.kb.visible = on; this.content.visible = !on; },
 
   ctx2d(m) { const c = m.userData.tex.image; const g = c.getContext('2d'); g.clearRect(0, 0, c.width, c.height); return [g, c.width, c.height]; },
 
@@ -81,7 +85,7 @@ export const browser = {
   drawContent() {
     const [g, w, h] = this.ctx2d(this.content);
     card(g, w, h, 'rgba(14,20,40,.95)', 30);
-    this.lines.slice(this.scroll, this.scroll + 16).forEach((l, i) => text(g, l, 28, 32 + i * 36, 30, { align: 'left', weight: '400' }));
+    this.lines.slice(this.scroll, this.scroll + VIS).forEach((l, i) => text(g, l, 28, 32 + i * 36, 30, { align: 'left', weight: '400' }));
     g.fillStyle = 'rgba(79,124,255,.35)';
     g.fillRect(w * 0.93, 8, w * 0.07 - 8, h / 2 - 12); g.fillRect(w * 0.93, h / 2 + 4, w * 0.07 - 8, h / 2 - 12);
     text(g, '▲', w * 0.965, h * 0.25, 40); text(g, '▼', w * 0.965, h * 0.75, 40);
@@ -104,20 +108,20 @@ export const browser = {
 
   key(k) {
     if (k === '⌫') this.input = this.input.slice(0, -1);
-    else if (k === 'Go') { this.go(this.input); return; }
+    else if (k === 'Go') { this.setKb(false); this.go(this.input); return; }
     else if (this.input.length < 120) this.input += k === 'space' ? ' ' : k;
     this.drawBar();
   },
 
   barClick(id) {
-    if (id === 'kbd') this.kb.visible = !this.kb.visible;
-    else if (id === 'go') this.go(this.input);
+    if (id === 'kbd') this.setKb(!this.kb.visible);
+    else if (id === 'go') { this.setKb(false); this.go(this.input); }
     else if (id === 'web') {
       const q = this.input.trim();
       if (!q) { this.setBody('Type an address first, then look at Web.'); return; }
       openWebWindow(toEmbed(/^https?:\/\//i.test(q) ? q : 'https://' + q));
     }
-    else if (id === 'url') { this.input = ''; this.drawBar(); }
+    else if (id === 'url') { this.input = ''; this.drawBar(); this.setKb(true); }
     else if (id === 'reload' && this.pos >= 0) this.load(this.hist[this.pos], false);
     else if (id === 'back' && this.pos > 0) { this.pos--; this.load(this.hist[this.pos], false); }
     else if (id === 'fwd' && this.pos < this.hist.length - 1) { this.pos++; this.load(this.hist[this.pos], false); }

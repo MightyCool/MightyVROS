@@ -5,6 +5,7 @@ import { HeadTracker } from './core/tracking.js';
 import { Gaze } from './input/gaze.js';
 import { Launcher } from './ui/launcher.js';
 import { buildRoom } from './world/room.js';
+import { Passthrough } from './core/passthrough.js';
 
 const $ = (id) => document.getElementById(id);
 const startBtn = $('start'), msg = $('msg'), hud = $('hud');
@@ -55,12 +56,21 @@ function boot() {
   scene.background = new THREE.Color(0x0b0f1a);
   scene.add(stereo.head);
 
-  buildRoom(scene);
+  const room = buildRoom(scene);
+  const pt = new Passthrough(stereo.head, settings);
+  const setPT = async (on) => {
+    try { await pt.set(on); } catch (e) { launcher.toast('Camera unavailable: ' + (e.message || e.name)); }
+    settings.passthrough = pt.on;
+    room.visible = !pt.on; // passthrough replaces the virtual room
+  };
 
   const launcher = new Launcher(scene, {
+    settings,
+    togglePassthrough: () => { settings.passthrough = !settings.passthrough; setPT(settings.passthrough); },
     recenter: () => tracker.recenter(),
     flipAxis: () => tracker.cycleOrient(),
     applySettings: (key) => {
+      if (key === 'passthrough') setPT(settings.passthrough);
       if (key === 'scaleMode') settings.scale = settings.scaleMode === 'auto' ? 1 : settings.scaleMode;
       if (key === 'aa') stereo.applyQuality(); else if (key === 'pr' || key === 'scaleMode') stereo.resize();
     },
@@ -87,6 +97,7 @@ function boot() {
     stereo.head.updateMatrixWorld(true);
     gaze.update(dt, launcher.targets());
     launcher.update(dt, gaze.hover);
+    pt.update(stereo.rt.width / 2 / stereo.rt.height);
     stereo.render(scene);
 
     acc += dt; frames++;

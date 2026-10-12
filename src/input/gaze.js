@@ -26,7 +26,12 @@ export class Gaze {
     head.add(this.group);
   }
 
-  static tint(m, on) { if (m) (m.userData.mats || [m.material]).forEach((x) => x.color.setHex(on ? 0xffffff : 0xa8b4d4)); }
+  static tint(m, on) {
+    if (!m) return;
+    const u = m.userData;
+    if (u.setHover) u.setHover(on); // texture swap (bright + outline)
+    else (u.mats || [m.material]).forEach((x) => x.color.setHex(on ? 0xffffff : 0xa8b4d4));
+  }
 
   update(dt, targets) {
     this.head.getWorldQuaternion(this.q);

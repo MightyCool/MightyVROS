@@ -14,7 +14,7 @@ const layout = (row) => {
 
 /** Gaze keyboard panel (hidden by default). onKey(keyName) fires after a 0.7 s dwell on a key. */
 export function createKeyboard(ctx, { w = 3.4, h = 0.95, r = 2.78, y = -0.55, onKey }) {
-  const m = ctx.button({ w, h, r, y, px: 1024, draw: () => {} });
+  const m = ctx.button({ w, h, r, y, px: 1024, hl: false, draw: () => {} });
   m.material.color.setHex(0xffffff);
   m.visible = false;
   let hk = null;

@@ -1,22 +1,22 @@
 export const settings = {
   ipd: 0.064,        // metres between eye cameras
   fov: 90,           // vertical FOV, degrees
-  k1: 0.22,          // barrel distortion coefficients
-  k2: 0.24,
-  lens: 0,           // multiplier on k1/k2 (0 = no warping; raise only if your lenses need it)
   pr: 2,             // max pixel ratio (1 / 1.25 / 1.5 / 2)
   scaleMode: 'auto', // 'auto' (dynamic resolution) or a fixed render scale
   scale: 1,          // current render scale
   minScale: 0.7,     // floor for dynamic resolution
   aa: 0,             // MSAA samples (0 / 2 / 4)
-  sharpen: 0.25,     // 0..1 sharpening in the distortion pass
+  sharpen: 0.25,     // 0..1 sharpening
   dwell: 1.2,        // seconds of gaze to click
   smooth: 25,        // head low-pass rate (higher = snappier)
   orient: null,      // sensor axis fix override (null = auto)
+  clock: '12',       // status bar clock: '12' or '24' hour
+  passthrough: false,
+  ptSize: 'fill',    // passthrough size: 'fill' or a fraction of the view height
   debug: false,
 };
 
-const KEYS = ['pr', 'scaleMode', 'minScale', 'aa', 'sharpen', 'fov', 'ipd', 'lens', 'dwell'];
+const KEYS = ['pr', 'scaleMode', 'minScale', 'aa', 'sharpen', 'fov', 'ipd', 'dwell', 'clock', 'ptSize'];
 
 export function loadSettings() {
   try {

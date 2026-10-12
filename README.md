@@ -20,3 +20,8 @@ Pull requests run lint + build (`.github/workflows/ci.yml`).
 
 ## Not yet (later stages)
 PC stream (2), hand tracking (3), Settings/Browser/AR apps, audio, NoSleep (4).
+
+## Settings / camera notes
+- Settings app: resolution, render scale, anti-aliasing, sharpen, FOV, IPD, gaze click time, 12/24-hour clock, passthrough camera + size.
+- No software lens warping: your headset lenses do the distortion.
+- Passthrough ("Camera" button on the home panel or Settings): rear camera behind the UI, same image in both eyes (no depth). Needs camera permission.

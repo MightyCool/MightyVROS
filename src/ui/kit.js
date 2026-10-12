@@ -12,6 +12,17 @@ export function canvasTex(w, h, draw) {
   return t;
 }
 
+/** Brighter copy of a drawn texture (white overlay on opaque pixels + outline) used as the hover state. */
+export function hoverTex(px, ph, draw) {
+  return canvasTex(px, ph, (g, W, H) => {
+    draw(g, W, H);
+    g.globalCompositeOperation = 'source-atop'; g.fillStyle = 'rgba(255,255,255,.32)'; g.fillRect(0, 0, W, H);
+    g.globalCompositeOperation = 'source-over';
+    g.lineWidth = Math.max(3, W * 0.012); g.strokeStyle = 'rgba(255,255,255,.95)';
+    roundRect(g, 3, 3, W - 6, H - 6, Math.min(W, H) * 0.2); g.stroke();
+  });
+}
+
 export function roundRect(g, x, y, w, h, r) {
   g.beginPath(); g.moveTo(x + r, y);
   g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r);
@@ -28,14 +39,20 @@ export function curvedGeometry(w, h, r) {
 }
 
 /** Curved textured panel. interactive:true makes it a gaze/pointer target. */
-export function makePanel({ w, h, r = R, angle = 0, y = 0, px = 256, draw, interactive = false, onClick }) {
-  const tex = canvasTex(px, Math.round((px * h) / w), draw);
+export function makePanel({ w, h, r = R, angle = 0, y = 0, px = 256, draw, interactive = false, onClick, hl = true }) {
+  const ph = Math.round((px * h) / w);
+  const tex = canvasTex(px, ph, draw);
   const m = new THREE.Mesh(curvedGeometry(w, h, r), new THREE.MeshBasicMaterial({
-    map: tex, transparent: true, depthWrite: false, color: interactive ? 0xa8b4d4 : 0xffffff,
+    map: tex, transparent: true, depthWrite: false, color: 0xffffff,
   }));
   m.rotation.y = (-angle * Math.PI) / 180;
   m.position.y = y;
   m.userData = { interactive, onClick, tex };
+  if (interactive && hl) {
+    const texH = hoverTex(px, ph, draw);
+    m.userData.texH = texH;
+    m.userData.setHover = (on) => { m.material.map = on ? texH : tex; };
+  }
   return m;
 }
 
@@ -51,5 +68,6 @@ export function disposeTree(o) {
   o.traverse((n) => {
     if (n.geometry) n.geometry.dispose();
     if (n.material) { if (n.material.map) n.material.map.dispose(); n.material.dispose(); }
+    if (n.userData) ['tex', 'texH'].forEach((k) => { if (n.userData[k] && n.userData[k].dispose) n.userData[k].dispose(); });
   });
 }

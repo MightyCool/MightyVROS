@@ -9,8 +9,10 @@ const DEFS = [
   { key: 'sharpen', label: 'Sharpen', opts: [0, 0.25, 0.5, 0.75], fmt: (v) => (v ? Math.round(v * 100) + '%' : 'Off') },
   { key: 'fov', label: 'Field of view', opts: range(70, 110, 5), fmt: (v) => v + '°' },
   { key: 'ipd', label: 'IPD', opts: range(0.056, 0.072, 0.002), fmt: (v) => Math.round(v * 1000) + ' mm' },
-  { key: 'lens', label: 'Lens correction', opts: [0, 0.5, 0.75, 1, 1.25, 1.5], fmt: (v) => Math.round(v * 100) + '%' },
   { key: 'dwell', label: 'Gaze click time', opts: [0.6, 0.8, 1, 1.2, 1.5, 2], fmt: (v) => v + ' s' },
+  { key: 'clock', label: 'Clock', opts: ['12', '24'], fmt: (v) => v + ' hour' },
+  { key: 'passthrough', label: 'Passthrough camera', opts: [false, true], fmt: (v) => (v ? 'On' : 'Off') },
+  { key: 'ptSize', label: 'Passthrough size', opts: ['fill', 1, 0.8, 0.6], fmt: (v) => (v === 'fill' ? 'Fill' : Math.round(v * 100) + '%') },
 ];
 
 const idx = (d) => {
@@ -29,7 +31,7 @@ export const settingsApp = {
 
   init(ctx) {
     this.rows = DEFS.map((d, i) => {
-      const m = ctx.button({ w: 3.2, h: 0.19, r: 2.8, y: 1.1 - i * 0.21, px: 1024, draw: () => {} });
+      const m = ctx.button({ w: 3.2, h: 0.19, r: 2.8, y: 1.15 - i * 0.21, px: 1024, hl: false, draw: () => {} });
       m.material.color.setHex(0xffffff);
       Object.assign(m.userData, {
         mats: [], dwell: 0.6, repeat: true, hl: null,

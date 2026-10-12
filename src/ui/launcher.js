@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { R, makePanel, canvasTex, card, text, disposeTree } from './kit.js';
+import { R, makePanel, canvasTex, hoverTex, card, text, disposeTree } from './kit.js';
 import { apps } from '../apps/stubs.js';
 
 const pad = (n) => String(n).padStart(2, '0');
@@ -7,6 +7,8 @@ const pad = (n) => String(n).padStart(2, '0');
 export class Launcher {
   constructor(scene, actions) {
     this.actions = actions;
+    this.settings = actions.settings;
+    this.toastT = 0; this.toastMsg = '';
     this.group = new THREE.Group();
     scene.add(this.group);
     this.home = new THREE.Group();
@@ -17,7 +19,7 @@ export class Launcher {
     if (navigator.getBattery) navigator.getBattery().then((b) => { this.battery = b; }).catch(() => {});
 
     // Status bar (redrawn when its text changes)
-    this.statusPanel = makePanel({ w: 1.9, h: 0.24, r: R, y: 1.3, px: 512, draw: () => {} });
+    this.statusPanel = makePanel({ w: 2.4, h: 0.36, r: R, y: 1.35, px: 768, draw: () => {} });
     this.home.add(this.statusPanel);
 
     // Main curved panel
@@ -27,12 +29,12 @@ export class Launcher {
         card(g, w, h);
         text(g, 'VR OS', w / 2, h * 0.3, 120, { weight: '700' });
         text(g, 'Look at an app and hold your gaze to open it', w / 2, h * 0.5, 42, { color: '#9fb0d8' });
-        text(g, 'Stage 1 · vertical slice', w / 2, h * 0.62, 32, { color: '#6c7fb0' });
       },
     }));
-    this.addHomeButton('Recenter', -19, () => actions.recenter());
-    this.addHomeButton('Flip axis', 0, () => actions.flipAxis());
-    this.addHomeButton('Debug', 19, () => actions.toggleDebug());
+    this.addHomeButton('Recenter', -27, () => actions.recenter());
+    this.addHomeButton('Flip axis', -9, () => actions.flipAxis());
+    this.addHomeButton('Camera', 9, () => actions.togglePassthrough());
+    this.addHomeButton('Debug', 27, () => actions.toggleDebug());
 
     // 3D dock: a wooden console table with app cubes that lift toward you when gazed at
     const wood = new THREE.MeshLambertMaterial({ color: 0x8b6b4a });
@@ -49,12 +51,13 @@ export class Launcher {
       g.fillStyle = gr; g.fillRect(0, 0, w, h);
     });
     apps.forEach((app, i) => {
-      const tex = canvasTex(192, 192, (g, w, h) => {
+      const drawFront = (g, w, h) => {
         card(g, w, h, 'rgba(30,40,80,1)', 36);
         text(g, app.icon, w / 2, h * 0.42, 84);
         text(g, app.name, w / 2, h * 0.84, 24);
-      });
-      const front = new THREE.MeshBasicMaterial({ map: tex, color: 0xa8b4d4 });
+      };
+      const tex = canvasTex(192, 192, drawFront), texH = hoverTex(192, 192, drawFront);
+      const front = new THREE.MeshBasicMaterial({ map: tex });
       const side = new THREE.MeshLambertMaterial({ color: 0x3a4a86 });
       const cube = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.2), [side, side, side, side, front, side]);
       cube.userData = { ang: ((-22.5 + i * 15) * Math.PI) / 180, h: 0 };
@@ -66,7 +69,7 @@ export class Launcher {
       glow.position.z = -0.11; cube.add(glow); cube.userData.glow = glow;
       // invisible, larger hit box (child, so it grows with the hover lift = built-in hysteresis)
       const hit = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.75, 0.5), new THREE.MeshBasicMaterial({ visible: false }));
-      hit.userData = { interactive: true, mats: [front], owner: cube, onClick: () => this.openApp(app) };
+      hit.userData = { interactive: true, owner: cube, setHover: (on) => { front.map = on ? texH : tex; }, onClick: () => this.openApp(app) };
       cube.add(hit);
       this.placeCube(cube);
       this.home.add(cube); this.homeBtns.push(hit); this.cubes.push(cube);
@@ -82,7 +85,7 @@ export class Launcher {
 
   addHomeButton(label, angle, onClick) {
     const b = makePanel({
-      w: 0.9, h: 0.34, r: R - 0.03, angle, y: -0.15, px: 256, interactive: true,
+      w: 0.85, h: 0.34, r: R - 0.03, angle, y: -0.15, px: 256, interactive: true,
       draw: (g, w, h) => { card(g, w, h, 'rgba(79,124,255,.55)', 40); text(g, label, w / 2, h / 2, 40, { weight: '600' }); },
       onClick,
     });
@@ -94,16 +97,18 @@ export class Launcher {
     const group = new THREE.Group();
     this.group.add(group);
     const btns = [];
-    const frame = makePanel({
-      w: 3.6, h: 2.2, r: R - 0.15, y: 0.4, px: 1024,
-      draw: (g, w, h) => { card(g, w, h, 'rgba(14,20,40,.94)'); text(g, `${app.icon}  ${app.name}`, 60, 60, 44, { align: 'left', weight: '700' }); },
+    // Layout rule for every app: title row y 1.4..1.7 (title + close), app content must stay within y -1.3..1.3
+    const frame = { visible: false }; // legacy handle: apps used to hide the old big frame
+    const title = makePanel({
+      w: 2.6, h: 0.3, r: R - 0.15, angle: -6, y: 1.55, px: 768,
+      draw: (g, w, h) => { card(g, w, h, 'rgba(14,20,40,.94)', 36); text(g, `${app.icon}  ${app.name}`, 28, h / 2, 40, { align: 'left', weight: '700' }); },
     });
     const close = makePanel({
-      w: 0.4, h: 0.4, r: R - 0.2, angle: 29, y: 1.25, px: 128, interactive: true,
-      draw: (g, w, h) => { card(g, w, h, 'rgba(255,90,90,.7)', 40); text(g, '✕', w / 2, h / 2, 56); },
+      w: 0.45, h: 0.3, r: R - 0.2, angle: 26, y: 1.55, px: 160, interactive: true,
+      draw: (g, w, h) => { card(g, w, h, 'rgba(255,90,90,.75)', 36); text(g, '✕', w / 2, h / 2, 44); },
       onClick: () => this.closeApp(),
     });
-    group.add(frame, close); btns.push(close);
+    group.add(title, close); btns.push(close);
     const ctx = {
       parent: group,
       frame,
@@ -111,7 +116,7 @@ export class Launcher {
       target: (m) => { btns.push(m); return m; },
       text: (lines) => group.add(makePanel({
         w: 3.3, h: 1.5, r: R - 0.2, y: 0.3, px: 1024,
-        draw: (g, w, h) => lines.forEach((l, i) => text(g, l, w / 2, h * (0.2 + i * 0.15), i === 0 ? 76 : 40, { color: i === 0 ? '#fff' : '#9fb0d8', weight: i === 0 ? '700' : '500' })),
+        draw: (g, w, h) => { card(g, w, h, 'rgba(14,20,40,.94)'); lines.forEach((l, i) => text(g, l, w / 2, h * (0.2 + i * 0.15), i === 0 ? 76 : 40, { color: i === 0 ? '#fff' : '#9fb0d8', weight: i === 0 ? '700' : '500' })); },
       })),
       button: (opts) => { const b = makePanel({ ...opts, interactive: true }); group.add(b); btns.push(b); return b; },
     };
@@ -134,7 +139,10 @@ export class Launcher {
 
   setExtra(s) { this.extra = s; }
 
+  toast(s) { this.toastMsg = s; this.toastT = 5; }
+
   update(dt, hover) {
+    this.toastT = Math.max(0, (this.toastT || 0) - dt);
     this.cubes.forEach((m) => {
       m.userData.h += ((hover && hover.userData.owner === m ? 1 : 0) - m.userData.h) * Math.min(1, dt * 12);
       m.userData.glow.material.opacity = m.userData.h * 0.9;
@@ -155,16 +163,21 @@ export class Launcher {
   drawStatus() {
     const d = new Date();
     const lvl = this.battery ? Math.round(this.battery.level * 100) + '%' : '--';
-    const key = `${pad(d.getHours())}:${pad(d.getMinutes())}|${navigator.onLine}|${lvl}|${this.extra}`;
+    const h24 = this.settings.clock === '24';
+    const hh = d.getHours();
+    const time = h24 ? `${pad(hh)}:${pad(d.getMinutes())}` : `${hh % 12 || 12}:${pad(d.getMinutes())} ${hh < 12 ? 'AM' : 'PM'}`;
+    const shown = this.toastT > 0 ? this.toastMsg : this.extra;
+    const key = `${time}|${navigator.onLine}|${lvl}|${shown}`;
     if (key === this.statusKey) return;
     this.statusKey = key;
     const t = this.statusPanel.userData.tex, c = t.image, g = c.getContext('2d');
     g.clearRect(0, 0, c.width, c.height);
     card(g, c.width, c.height, 'rgba(20,28,52,.75)', 40);
-    text(g, `${pad(d.getHours())}:${pad(d.getMinutes())}`, c.width * 0.2, c.height / 2, 52, { weight: '700' });
-    text(g, navigator.onLine ? 'Wi-Fi ●' : 'Offline', c.width * 0.5, c.height / 2, 38, { color: '#9fb0d8' });
-    text(g, `🔋 ${lvl}`, c.width * 0.78, c.height / 2, 38, { color: '#9fb0d8' });
-    if (this.extra) text(g, this.extra, c.width * 0.5, c.height * 0.88, 22, { color: '#7CFC9A' });
+    const row = shown ? c.height * 0.34 : c.height / 2; // two rows only when there is a message
+    text(g, time, c.width * 0.22, row, 38, { weight: '700' });
+    text(g, navigator.onLine ? 'Wi-Fi ●' : 'Offline', c.width * 0.55, row, 32, { color: '#9fb0d8' });
+    text(g, `🔋 ${lvl}`, c.width * 0.83, row, 32, { color: '#9fb0d8' });
+    if (shown) text(g, shown, c.width / 2, c.height * 0.76, 24, { color: this.toastT > 0 ? '#ffd27c' : '#7CFC9A' });
     t.needsUpdate = true;
   }
 }

@@ -3,14 +3,9 @@ import * as THREE from 'three';
 THREE.ColorManagement.enabled = false; // no sRGB round trips: cheaper, colours as authored
 
 const VERT = 'varying vec2 v; void main(){ v=uv; gl_Position=vec4(position.xy,0.,1.); }';
-const FRAG = `uniform sampler2D t; uniform float k1,k2,zoom,sharp; uniform vec2 texel; varying vec2 v;
+const FRAG = `uniform sampler2D t; uniform float sharp; uniform vec2 texel; varying vec2 v;
 void main(){
-  float e=step(0.5,v.x);
-  vec2 c=vec2((v.x-e*0.5)*2.0,v.y)*2.0-1.0;
-  float r2=dot(c,c);
-  c*=(1.0+k1*r2+k2*r2*r2)/zoom;
-  if(abs(c.x)>1.0||abs(c.y)>1.0){gl_FragColor=vec4(0.,0.,0.,1.);return;}
-  vec2 u=c*0.5+0.5; u.x=u.x*0.5+e*0.5;
+  vec2 u=v;
   vec4 c0=texture2D(t,u);
   if(sharp>0.0){
     vec3 n=texture2D(t,u+vec2(texel.x,0.)).rgb+texture2D(t,u-vec2(texel.x,0.)).rgb+texture2D(t,u+vec2(0.,texel.y)).rgb+texture2D(t,u-vec2(0.,texel.y)).rgb;
@@ -19,7 +14,7 @@ void main(){
   gl_FragColor=c0;
 }`;
 
-/** Renders both eyes into one render target, then one fullscreen barrel-distortion pass. */
+/** Renders both eyes into one render target, then one fullscreen copy/sharpen pass (no lens warping: your headset lenses do that). */
 export class StereoRenderer {
   constructor(canvas, settings) {
     this.s = settings;
@@ -31,7 +26,7 @@ export class StereoRenderer {
     this.eyes.forEach((c) => this.head.add(c));
     this.rt = new THREE.WebGLRenderTarget(2, 2, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, depthBuffer: true, samples: settings.aa });
     this.mat = new THREE.ShaderMaterial({
-      uniforms: { t: { value: this.rt.texture }, k1: { value: 0 }, k2: { value: 0 }, zoom: { value: 1 }, sharp: { value: 0 }, texel: { value: new THREE.Vector2(1, 1) } },
+      uniforms: { t: { value: this.rt.texture }, sharp: { value: 0 }, texel: { value: new THREE.Vector2(1, 1) } },
       vertexShader: VERT, fragmentShader: FRAG, depthTest: false, depthWrite: false,
     });
     this.quad = new THREE.Scene();
@@ -80,8 +75,7 @@ export class StereoRenderer {
     }
     r.setRenderTarget(null);
     const u = this.mat.uniforms;
-    const k1 = s.k1 * s.lens, k2 = s.k2 * s.lens;
-    u.k1.value = k1; u.k2.value = k2; u.zoom.value = 1 + k1 + k2; u.sharp.value = s.sharpen;
+    u.sharp.value = s.sharpen;
     r.render(this.quad, this.quadCam);
   }
 
