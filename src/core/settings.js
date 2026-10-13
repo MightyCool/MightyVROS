@@ -10,13 +10,19 @@ export const settings = {
   dwell: 1.2,        // seconds of gaze to click
   smooth: 25,        // head low-pass rate (higher = snappier)
   orient: null,      // sensor axis fix override (null = auto)
+  input: 'auto',     // 'auto' (hand / controller if tracked, else gaze) or 'gaze'
+  hands: false,
+  controllers: false,
+  camFov: 62,        // rear camera horizontal FOV, degrees (maps camera pixels to view directions)
+  mirror: false,     // test: mirror each eye horizontally
+  swap: false,       // test: swap left/right eye images
   clock: '12',       // status bar clock: '12' or '24' hour
   passthrough: false,
   ptSize: 'fill',    // passthrough size: 'fill' or a fraction of the view height
   debug: false,
 };
 
-const KEYS = ['pr', 'scaleMode', 'minScale', 'aa', 'sharpen', 'fov', 'ipd', 'dwell', 'clock', 'ptSize'];
+const KEYS = ['pr', 'scaleMode', 'minScale', 'aa', 'sharpen', 'fov', 'ipd', 'dwell', 'clock', 'ptSize', 'input', 'camFov', 'mirror', 'swap'];
 
 export function loadSettings() {
   try {

@@ -21,7 +21,8 @@ function swStamp() {
         }
       };
       walk(outDir);
-      const list = files.filter((f) => f !== 'sw.js').map((f) => './' + f);
+      // MediaPipe files (~19 MB) are cached on first use by the runtime cache, not precached
+      const list = files.filter((f) => f !== 'sw.js' && !f.startsWith('mediapipe/')).map((f) => './' + f);
       list.push('./');
       const s = fs.readFileSync(swPath, 'utf8')
         .replace('__BUILD_ID__', String(Date.now()))

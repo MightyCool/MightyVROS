@@ -36,6 +36,8 @@ export const browser = {
     this.content = mk({ w: 3.8, h: 1.9, r: 2.85, y: 0, px: 1536, draw: () => {} }, {
       region: (uv) => (uv.x > 0.93 ? (uv.y > 0.5 ? 'up' : 'down') : null),
       dwell: 0.5, repeat: true,
+      onDrag: (du, dv) => this.scrollLines(dv * 20), // pinch-drag with a hand
+      onScroll: (a) => this.scrollLines(a),           // Joy-Con stick
       onClick: (id) => { this.scroll = Math.max(0, Math.min(Math.max(0, this.lines.length - VIS), this.scroll + (id === 'up' ? -6 : 6))); this.drawContent(); },
     });
     this.kb = mk({ w: 3.4, h: 1.6, r: 2.8, y: 0, px: 1024, draw: () => {} }, {
@@ -47,6 +49,15 @@ export const browser = {
     this.kb.visible = false; // keyboard and page share one area: only one is shown at a time
     this.drawBar(); this.drawKb();
     this.setBody(WELCOME);
+  },
+
+  scrollLines(d) {
+    this.acc = (this.acc || 0) + d;
+    const n = Math.trunc(this.acc);
+    if (!n) return;
+    this.acc -= n;
+    this.scroll = Math.max(0, Math.min(Math.max(0, this.lines.length - VIS), this.scroll + n));
+    this.drawContent();
   },
 
   setKb(on) { this.kb.visible = on; this.content.visible = !on; },

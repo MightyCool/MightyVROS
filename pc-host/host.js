@@ -5,6 +5,15 @@ const ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const randCode = () => Array.from({ length: 6 }, () => ABC[Math.floor(Math.random() * ABC.length)]).join('');
 const say = (s) => { $('status').textContent = s; };
 let stream = null, peer = null, call = null, approved = null, helper = false;
+const joyConns = new Set(); // headsets that only want Joy-Con data (role: 'joy')
+
+// Relay Joy-Con state from host.py to every joy connection (~60 Hz)
+setInterval(() => {
+  if (!joyConns.size) return;
+  fetch('/joy').then((r) => r.json()).then((j) => {
+    for (const s of ['L', 'R']) if (j[s]) joyConns.forEach((c) => { if (c.open) c.send({ t: 'joy', s, ...j[s] }); });
+  }).catch(() => {});
+}, 16);
 
 fetch('/ping').then((r) => r.text()).then((t) => { helper = t === 'ok'; }).catch(() => {}).finally(() => {
   $('ctrl').textContent = helper
@@ -41,6 +50,11 @@ function register() {
   peer.on('disconnected', () => peer.reconnect());
   peer.on('error', (e) => { if (e.type === 'unavailable-id') register(); else say('Signaling error: ' + e.type); });
   peer.on('connection', (conn) => {
+    if (conn.metadata && conn.metadata.role === 'joy') { // controller data only: no screen, no control, so no approval needed
+      conn.on('open', () => { joyConns.add(conn); say('Controller link connected.'); });
+      conn.on('close', () => joyConns.delete(conn));
+      return;
+    }
     conn.on('open', () => {
       // Anyone who learns the code could otherwise watch/control the PC, so every headset must be approved here.
       $('who').textContent = conn.peer.slice(-6);

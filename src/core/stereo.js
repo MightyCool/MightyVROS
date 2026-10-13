@@ -3,9 +3,14 @@ import * as THREE from 'three';
 THREE.ColorManagement.enabled = false; // no sRGB round trips: cheaper, colours as authored
 
 const VERT = 'varying vec2 v; void main(){ v=uv; gl_Position=vec4(position.xy,0.,1.); }';
-const FRAG = `uniform sampler2D t; uniform float sharp; uniform vec2 texel; varying vec2 v;
+const FRAG = `uniform sampler2D t; uniform float sharp, mir, swp; uniform vec2 texel; varying vec2 v;
 void main(){
   vec2 u=v;
+  float e=step(0.5,u.x);
+  float lx=(u.x-e*0.5)*2.0;
+  if(mir>0.5) lx=1.0-lx;
+  if(swp>0.5) e=1.0-e;
+  u.x=lx*0.5+e*0.5;
   vec4 c0=texture2D(t,u);
   if(sharp>0.0){
     vec3 n=texture2D(t,u+vec2(texel.x,0.)).rgb+texture2D(t,u-vec2(texel.x,0.)).rgb+texture2D(t,u+vec2(0.,texel.y)).rgb+texture2D(t,u-vec2(0.,texel.y)).rgb;
@@ -26,7 +31,7 @@ export class StereoRenderer {
     this.eyes.forEach((c) => this.head.add(c));
     this.rt = new THREE.WebGLRenderTarget(2, 2, { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, depthBuffer: true, samples: settings.aa });
     this.mat = new THREE.ShaderMaterial({
-      uniforms: { t: { value: this.rt.texture }, sharp: { value: 0 }, texel: { value: new THREE.Vector2(1, 1) } },
+      uniforms: { t: { value: this.rt.texture }, sharp: { value: 0 }, mir: { value: 0 }, swp: { value: 0 }, texel: { value: new THREE.Vector2(1, 1) } },
       vertexShader: VERT, fragmentShader: FRAG, depthTest: false, depthWrite: false,
     });
     this.quad = new THREE.Scene();
@@ -75,7 +80,7 @@ export class StereoRenderer {
     }
     r.setRenderTarget(null);
     const u = this.mat.uniforms;
-    u.sharp.value = s.sharpen;
+    u.sharp.value = s.sharpen; u.mir.value = s.mirror ? 1 : 0; u.swp.value = s.swap ? 1 : 0;
     r.render(this.quad, this.quadCam);
   }
 

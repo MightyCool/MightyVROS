@@ -4,11 +4,11 @@ const DIST = 6; // metres: head-locked camera plane sits behind all UI
 
 /** Camera passthrough: rear camera video on a head-locked plane behind the UI (same image in both eyes). */
 export class Passthrough {
-  constructor(head, settings) {
+  constructor(head, settings, camera) {
     this.s = settings;
     this.on = false;
-    this.stream = null;
-    this.video = document.getElementById('ptv');
+    this.camera = camera;
+    this.video = camera.video;
     this.tex = new THREE.VideoTexture(this.video);
     this.tex.minFilter = this.tex.magFilter = THREE.LinearFilter;
     this.tex.generateMipmaps = false;
@@ -22,18 +22,8 @@ export class Passthrough {
 
   async set(on) {
     if (on === this.on) return;
-    if (!on) {
-      if (this.stream) this.stream.getTracks().forEach((t) => t.stop());
-      this.stream = null; this.video.srcObject = null;
-      this.mesh.visible = false; this.on = false;
-      return;
-    }
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('Camera not supported here');
-    this.stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false,
-    });
-    this.video.srcObject = this.stream;
-    await this.video.play();
+    if (!on) { this.camera.release('passthrough'); this.mesh.visible = false; this.on = false; return; }
+    await this.camera.use('passthrough');
     this.mesh.visible = true; this.on = true;
   }
 

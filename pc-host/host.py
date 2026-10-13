@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """VR OS PC helper: serves the host page on http://localhost:8765 and applies mouse/keyboard input from the headset.
-Setup: pip install pyautogui     Run: python host.py"""
-import json, os, sys
+Setup: pip install pyautogui     Run: python host.py
+Optional Joy-Con relay (IMU + buttons to the headset): pip install joycon-python hidapi, pair the Joy-Cons to this PC by Bluetooth first."""
+import json, os, sys, threading, time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 try:
@@ -9,6 +10,7 @@ try:
 except ImportError:
     sys.exit('Missing dependency. Run:  pip install pyautogui')
 
+JOY = {'L': None, 'R': None}   # latest Joy-Con state, read by the host page through GET /joy
 pyautogui.PAUSE = 0
 pyautogui.FAILSAFE = False
 W, H = pyautogui.size()
@@ -33,12 +35,49 @@ def handle(m):
             pyautogui.write(k)
 
 
+def start_joycons():
+    try:
+        from pyjoycon import PythonicJoyCon, get_L_id, get_R_id
+        from joyfusion import Fusion
+    except Exception as e:  # missing package or hid library: just no controllers
+        print('Joy-Con support off:', e)
+        return
+    btn_names = {'L': ['l', 'zl', 'up', 'down', 'left', 'right', 'minus', 'capture', 'left_sl', 'left_sr'],
+                 'R': ['r', 'zr', 'a', 'b', 'x', 'y', 'plus', 'home', 'right_sl', 'right_sr']}
+    for side, getter in (('L', get_L_id), ('R', get_R_id)):
+        try:
+            ids = getter()
+            if ids[0] is None:
+                continue
+            jc = PythonicJoyCon(*ids)
+        except Exception as e:
+            print(f'Joy-Con {side}: not available ({e})')
+            continue
+        fus = Fusion()
+
+        def hook(j, side=side, fus=fus):
+            for a, g in zip(j.accel_in_g, j.gyro_in_rad):
+                fus.update(g, a, 1 / 180)
+            sx, sy = j.stick_l if side == 'L' else j.stick_r
+            JOY[side] = {
+                'q': fus.xyzw(),
+                'b': [n for n in btn_names[side] if getattr(j, n, False)],
+                'st': [max(-1, min(1, (sx - 2048) / 1500)), max(-1, min(1, (sy - 2048) / 1500))],
+                'ts': time.time(),
+            }
+        jc.register_update_hook(hook)
+        print(f'Joy-Con {side}: connected')
+
+
 class Handler(SimpleHTTPRequestHandler):
     def log_message(self, *a):
         pass
 
     def do_GET(self):
-        if self.path == '/ping':
+        if self.path == '/joy':
+            body = json.dumps(JOY).encode()
+            self.send_response(200); self.send_header('Content-Type', 'application/json'); self.send_header('Cache-Control', 'no-store'); self.end_headers(); self.wfile.write(body)
+        elif self.path == '/ping':
             self.send_response(200); self.send_header('Content-Type', 'text/plain'); self.end_headers(); self.wfile.write(b'ok')
         else:
             super().do_GET()
@@ -57,5 +96,6 @@ class Handler(SimpleHTTPRequestHandler):
 
 if __name__ == '__main__':
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
+    threading.Thread(target=start_joycons, daemon=True).start()
     print(f'Screen {W}x{H}. Open http://localhost:8765 in Chrome/Edge. Ctrl+C to stop.')
     ThreadingHTTPServer(('127.0.0.1', 8765), Handler).serve_forever()

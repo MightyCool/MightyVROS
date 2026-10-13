@@ -6,6 +6,9 @@ import { Gaze } from './input/gaze.js';
 import { Launcher } from './ui/launcher.js';
 import { buildRoom } from './world/room.js';
 import { Passthrough } from './core/passthrough.js';
+import { Camera } from './core/camera.js';
+import { HandInput } from './input/hands.js';
+import { Controllers } from './input/joycon.js';
 
 const $ = (id) => document.getElementById(id);
 const startBtn = $('start'), msg = $('msg'), hud = $('hud');
@@ -57,7 +60,14 @@ function boot() {
   scene.add(stereo.head);
 
   const room = buildRoom(scene);
-  const pt = new Passthrough(stereo.head, settings);
+  const camera = new Camera();
+  const pt = new Passthrough(stereo.head, settings, camera);
+  const hands = new HandInput(camera, settings, stereo.head);
+  const joy = new Controllers(scene, stereo.head, camera, settings);
+  const setHands = async (on) => {
+    try { if (on) await hands.start(); else hands.stop(); } catch (e) { settings.hands = false; launcher.toast('Hand tracking: ' + (e.message || e.name)); }
+  };
+  const setJoy = async (on) => { if (on) await joy.start(); else joy.stop(); };
   const setPT = async (on) => {
     try { await pt.set(on); } catch (e) { launcher.toast('Camera unavailable: ' + (e.message || e.name)); }
     settings.passthrough = pt.on;
@@ -66,11 +76,14 @@ function boot() {
 
   const launcher = new Launcher(scene, {
     settings,
+    controllers: joy,
     togglePassthrough: () => { settings.passthrough = !settings.passthrough; setPT(settings.passthrough); },
     recenter: () => tracker.recenter(),
     flipAxis: () => tracker.cycleOrient(),
     applySettings: (key) => {
       if (key === 'passthrough') setPT(settings.passthrough);
+      if (key === 'hands') setHands(settings.hands);
+      if (key === 'controllers') setJoy(settings.controllers);
       if (key === 'scaleMode') settings.scale = settings.scaleMode === 'auto' ? 1 : settings.scaleMode;
       if (key === 'aa') stereo.applyQuality(); else if (key === 'pr' || key === 'scaleMode') stereo.resize();
     },
@@ -95,7 +108,9 @@ function boot() {
     tracker.update(dt);
     stereo.head.quaternion.copy(tracker.quaternion);
     stereo.head.updateMatrixWorld(true);
-    gaze.update(dt, launcher.targets());
+    hands.tick(now); hands.update(stereo.head.quaternion);
+    joy.update(dt, stereo.head.quaternion, now);
+    gaze.update(dt, launcher.targets(), [...joy.pointers, hands.pointer]);
     launcher.update(dt, gaze.hover);
     pt.update(stereo.rt.width / 2 / stereo.rt.height);
     stereo.render(scene);
@@ -109,7 +124,7 @@ function boot() {
         else if (fps > 58 && settings.scale < 1) { settings.scale = Math.min(1, settings.scale + 0.05); stereo.resizeTarget(); }
       }
       if (settings.debug) {
-        const s = `${fps.toFixed(0)} fps · ${(settings.scale * 100).toFixed(0)}% · ${stereo.calls} calls · ori ${tracker.angle}`;
+        const s = `${fps.toFixed(0)} fps · ${(settings.scale * 100).toFixed(0)}% · ${stereo.calls} calls · ori ${tracker.angle} · hand ${hands.fps}`;
         hud.textContent = s; launcher.setExtra(s);
       }
       acc = 0; frames = 0;

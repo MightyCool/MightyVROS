@@ -38,9 +38,9 @@ export class Launcher {
 
     // 3D dock: a wooden console table with app cubes that lift toward you when gazed at
     const wood = new THREE.MeshLambertMaterial({ color: 0x8b6b4a });
-    const top = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.08, 0.8), wood);
+    const top = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.08, 0.8), wood);
     top.position.set(0, -1.1, -2.55); this.home.add(top);
-    [[-1.15, -2.25], [1.15, -2.25], [-1.15, -2.85], [1.15, -2.85]].forEach(([x, z]) => {
+    [[-1.45, -2.25], [1.45, -2.25], [-1.45, -2.85], [1.45, -2.85]].forEach(([x, z]) => {
       const l = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.46, 0.08), wood);
       l.position.set(x, -1.37, z); this.home.add(l);
     });
@@ -60,7 +60,7 @@ export class Launcher {
       const front = new THREE.MeshBasicMaterial({ map: tex });
       const side = new THREE.MeshLambertMaterial({ color: 0x3a4a86 });
       const cube = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.5, 0.2), [side, side, side, side, front, side]);
-      cube.userData = { ang: ((-22.5 + i * 15) * Math.PI) / 180, h: 0 };
+      cube.userData = { ang: (((i - (apps.length - 1) / 2) * 15) * Math.PI) / 180, h: 0 };
       cube.rotation.y = -cube.userData.ang;
       // additive glow behind the cube: it can only ever brighten
       const glow = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.95), new THREE.MeshBasicMaterial({

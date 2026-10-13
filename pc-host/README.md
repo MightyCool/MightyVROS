@@ -24,3 +24,10 @@ This is how you get a full browser (YouTube etc.) in VR: run Chrome on the PC, c
 - Only the approved headset can send input, and `host.py` listens on 127.0.0.1 only.
 - Mouse mapping assumes you share your main monitor.
 - Needs internet for PeerJS pairing; strict NATs without TURN may fail.
+
+## Joy-Con controllers (optional)
+iPhones cannot read Joy-Con motion sensors directly (no WebHID, and iOS 15 cannot even pair them), so the PC relays them.
+1. `pip install joycon-python hidapi` and pair the Joy-Cons to the **PC** by Bluetooth (hold the small sync button).
+2. Run `python host.py` as usual; it prints `Joy-Con L/R: connected`. Keep the host page open (sharing the screen is not required for controllers).
+3. In VR open **Controllers**: link to the PC, calibrate each Joy-Con's colour and pose. See the app for the steps.
+Orientation comes from the gyro + accelerometer (yaw slowly drifts: use **Zero** while pointing forward); position comes from the phone camera following the Joy-Con's colour.

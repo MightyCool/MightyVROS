@@ -7,9 +7,12 @@
     "dev": "vite --host",
     "build": "vite build",
     "preview": "vite preview --host",
-    "lint": "eslint src public/sw.js vite.config.js"
+    "lint": "eslint src public/sw.js vite.config.js scripts",
+    "prebuild": "node scripts/copy-mediapipe.mjs",
+    "predev": "node scripts/copy-mediapipe.mjs"
   },
   "dependencies": {
+    "@mediapipe/hands": "^0.4.1675469240",
     "peerjs": "^1.5.5",
     "three": "0.160.1"
   },

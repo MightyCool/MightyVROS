@@ -25,3 +25,9 @@ PC stream (2), hand tracking (3), Settings/Browser/AR apps, audio, NoSleep (4).
 - Settings app: resolution, render scale, anti-aliasing, sharpen, FOV, IPD, gaze click time, 12/24-hour clock, passthrough camera + size.
 - No software lens warping: your headset lenses do the distortion.
 - Passthrough ("Camera" button on the home panel or Settings): rear camera behind the UI, same image in both eyes (no depth). Needs camera permission.
+
+## Hand tracking and controllers
+- **Hand tracking** (Settings > Input > Hand tracking): MediaPipe Hands (lite model), self-hosted and cached on first use (~19 MB, copied from `node_modules` at build time).
+  Hold a hand in front of the phone's rear camera: pinch (thumb + index) to click, pinch and drag to scroll the browser page.
+  The cursor sits at the pinch point. Gaze still works whenever no hand is seen. Set "Camera field of view" so the hand lines up with the passthrough image.
+- **Joy-Cons**: see pc-host/README.md. Open the **Controllers** app to link, calibrate colour (camera) and pose (gravity), then use ZR/R (right) or ZL/L (left) to click and the stick to scroll.
