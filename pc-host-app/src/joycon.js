@@ -9,6 +9,12 @@ const BTN = {
 };
 const i16 = (b, o) => b.readInt16LE(o);
 
+/** Reply to an SPI read of address 0x6050 (report 0x21): the Joy-Con's own body colour [r,g,b], else null. */
+export function parseColor(b) {
+  if (b.length < 23 || b[0] !== 0x21 || b[14] !== 0x10 || b[15] !== 0x50 || b[16] !== 0x60) return null;
+  return [b[20], b[21], b[22]];
+}
+
 /** One 0x30 input report -> {q,b,st,ts} (feeds the fusion filter with the 3 IMU samples inside). null if not a full report. */
 export function parseReport(side, b, fus) {
   if (b.length < 49 || b[0] !== 0x30) return null;
@@ -38,12 +44,19 @@ export async function startJoycons(log = () => {}) {
     try {
       const dev = new HID.HID(d.path);
       let pn = 0;
-      const out = (sub, arg) => { const p = Buffer.alloc(49); p[0] = 0x01; p[1] = pn++ & 0xf; RUMBLE.forEach((v, i) => { p[2 + i] = v; }); p[10] = sub; p[11] = arg; dev.write([...p]); };
+      const out = (sub, arg) => { const p = Buffer.alloc(49); p[0] = 0x01; p[1] = pn++ & 0xf; RUMBLE.forEach((v, i) => { p[2 + i] = v; }); p[10] = sub; [].concat(arg).forEach((v, i) => { p[11 + i] = v; }); dev.write([...p]); };
+      let col = null;
       const fus = new Fusion();
-      dev.on('data', (b) => { const r = parseReport(side, b, fus); if (r) states[side] = r; });
+      dev.on('data', (b) => {
+        const c = parseColor(b);
+        if (c) { col = c; log(`Joy-Con ${side} colour ${c.join(',')}`); return; }
+        const r = parseReport(side, b, fus);
+        if (r) { if (col) r.col = col; states[side] = r; }
+      });
       dev.on('error', () => { states[side] = null; });
       setTimeout(() => out(0x40, 0x01), 100);   // enable IMU
       setTimeout(() => out(0x03, 0x30), 250);   // full-rate standard input reports (60 Hz, 3 IMU samples each)
+      for (const t of [500, 1500, 3500]) setTimeout(() => { if (!col) out(0x10, [0x50, 0x60, 0x00, 0x00, 0x0d]); }, t); // read the body colour from the Joy-Con's flash memory
       devs.push({ side, dev });
       log(`Joy-Con ${side}: connected`);
     } catch (e) { log(`Joy-Con ${side}: could not open (${e.message})`); }

@@ -1,4 +1,4 @@
-import { parseReport } from '../src/joycon.js';
+import { parseReport, parseColor } from '../src/joycon.js';
 import { Fusion } from '../src/fusion.js';
 import koffi from 'koffi';
 let bad = 0; const check = (name, ok) => { console.log((ok ? 'ok   ' : 'FAIL ') + name); if (!ok) bad++; };
@@ -15,6 +15,8 @@ check('flat orientation: gravity maps to world up', Math.abs(Math.hypot(r.q[0], 
 let L = mk('L'); L[5] = 0x80 | 0x40; L[4] = 0x01;
 const rl = parseReport('L', L, new Fusion());
 check('left buttons decode (zl, l, minus)', rl.b.includes('zl') && rl.b.includes('l') && rl.b.includes('minus'));
+const spi = Buffer.alloc(49); spi[0] = 0x21; spi[13] = 0x90; spi[14] = 0x10; spi[15] = 0x50; spi[16] = 0x60; spi[19] = 0x0d; spi[20] = 230; spi[21] = 40; spi[22] = 50;
+check('body colour parsed from an SPI reply', JSON.stringify(parseColor(spi)) === '[230,40,50]' && parseColor(b) === null);
 check('short report ignored', parseReport('R', Buffer.alloc(10), fus) === null);
 // Windows API prototypes must at least parse (the DLL itself only exists on Windows)
 for (const p of ['bool SetProcessDPIAware()', 'int GetSystemMetrics(int)', 'bool SetCursorPos(int, int)', 'void mouse_event(uint32_t, uint32_t, uint32_t, int32_t, uintptr_t)', 'void keybd_event(uint8_t, uint8_t, uint32_t, uintptr_t)', 'int16_t VkKeyScanW(uint16_t)']) {

@@ -51,7 +51,8 @@ export class Gaze {
     }
     if (!!p !== this.usingPointer) { this.usingPointer = !!p; this.group.visible = !p; this.t = 0; }
     const list = targets.filter((m) => m.visible && m.userData.interactive);
-    const hit = this.ray.intersectObjects(list, false)[0];
+    let hit = this.ray.intersectObjects(list, false)[0];
+    if (!hit && p) hit = this.assist(p, list);
     const m = hit ? hit.object : null;
     const u = m ? m.userData : null;
     const id = u && u.region && hit.uv ? u.region(hit.uv) : null;
@@ -76,10 +77,28 @@ export class Gaze {
     if (step > 0) this.prog.geometry = this.arcs[step];
   }
 
+  /** Hand / controller aim is shaky: if the centre ray misses, try four rays about 1.7 degrees around it. */
+  assist(p, list) {
+    const u = new THREE.Vector3().crossVectors(p.dir, new THREE.Vector3(0, 1, 0));
+    if (u.lengthSq() < 1e-6) u.set(1, 0, 0);
+    u.normalize();
+    const v = new THREE.Vector3().crossVectors(p.dir, u);
+    let best = null;
+    for (const [a, b] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      this.dir.copy(p.dir).addScaledVector(u, a * 0.03).addScaledVector(v, b * 0.03).normalize();
+      this.ray.set(p.origin, this.dir);
+      const h = this.ray.intersectObjects(list, false)[0];
+      if (h && (!best || h.distance < best.distance)) best = h;
+    }
+    this.ray.set(p.origin, p.dir);
+    return best;
+  }
+
   pointerClick(dt, p, hit, m, u, id) {
     this.prog.visible = false; this.t = 0;
     const pt = hit ? hit.point : this.org.copy(p.origin).addScaledVector(p.dir, 2.6);
-    this.cursor.position.copy(pt);
+    this.cursor.position.copy(this.head.worldToLocal(pt.clone()));
+    this.cursor.material.color.setHex(m ? 0x7cf4ff : 0xffffff);
     this.cursor.scale.setScalar(p.pressed ? 0.6 : 1);
     this.cursor.visible = true;
     const rising = p.pressed && !this.wasPressed;

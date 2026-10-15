@@ -58,7 +58,7 @@ export const controllersApp = {
     const C = this.C;
     let c = this.info.userData.tex.image, g = c.getContext('2d');
     g.clearRect(0, 0, c.width, c.height); card(g, c.width, c.height, 'rgba(14,20,40,.94)', 28);
-    const st = (s) => `${s}: IMU ${C.imu(s) ? '✓' : '–'}  colour ${C.cfg[s].color ? '✓' : '–'}  pose ${C.c[s].B ? '✓' : '–'}  seen ${C.c[s].blob ? '✓' : '–'}`;
+    const st = (s) => `${s}: IMU ${C.imu(s) ? '✓' : '–'}  colour ${C.cfg[s].color ? (C.cfg[s].color.auto ? 'auto' : '✓') : '–'}  pose ${C.c[s].B ? '✓' : '–'}  seen ${C.c[s].blob ? '✓' : '–'}`;
     text(g, 'Controllers', c.width / 2, 36, 34, { weight: '700' });
     [`PC link: ${C.link.status}`, st('L'), st('R')].forEach((l, i) => text(g, l, c.width / 2, 86 + i * 34, 22, { color: '#9fb0d8' }));
     const msg = this.job ? `${this.job.text}  (${Math.ceil(this.job.t)})` : this.msg;

@@ -18,7 +18,7 @@ and relays Joy-Con controllers. It replaces the Chrome tab of the older `pc-host
 - Memory: about 100 MB for the program + 40 to 90 MB for the video encoder process (ffmpeg). Measured on a Linux test machine with the software encoder; on Windows it tries a hardware encoder first (NVENC, Quick Sync, AMF) which uses less.
 - Capture and encoding: bundled ffmpeg, primary monitor, H.264 baseline (hardware decoded on iPhone), no audio.
 - Remote control: mouse and keyboard through Windows `user32`. Windows only.
-- Joy-Cons: pair them to this PC by Bluetooth. Read over HID, fused to an orientation, sent to the headset's Controllers app.
+- Joy-Cons: pair them to this PC by Bluetooth. Read over HID, fused to an orientation, sent to the headset's Controllers app. The host also reads each Joy-Con's own body colour (so the camera can find it with no calibration; grey or white Joy-Cons still need the manual colour step). Only this installer app reads the colour, not the older Python host.
 - Pairing: PeerJS cloud is used only to introduce the two devices; video and control then go directly over your network. Every headset must be approved on the PC.
 
 ## Not included

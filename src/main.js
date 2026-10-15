@@ -108,7 +108,7 @@ function boot() {
     tracker.update(dt);
     stereo.head.quaternion.copy(tracker.quaternion);
     stereo.head.updateMatrixWorld(true);
-    hands.tick(now); hands.update(stereo.head.quaternion);
+    hands.tick(now); hands.update(stereo.head.quaternion, dt);
     joy.update(dt, stereo.head.quaternion, now);
     gaze.update(dt, launcher.targets(), [...joy.pointers, hands.pointer]);
     launcher.update(dt, gaze.hover);

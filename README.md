@@ -35,3 +35,7 @@ PC stream (2), hand tracking (3), Settings/Browser/AR apps, audio, NoSleep (4).
 ## PC host
 - **Windows installer (recommended, low RAM):** `pc-host-app/` builds `VR-OS-Host-Setup.exe` through GitHub Actions (tag `host-v1.0.0`). See `pc-host-app/README.md`.
 - Older Chrome-based host with audio: `pc-host/`.
+
+## Selecting with hands and controllers
+- Hand: pinch thumb + index (the glove shows a cyan fingertip when it registers). Controller: ZR, R or A (right Joy-Con); ZL, L or D-pad down (left Joy-Con).
+- The pointer dot has a small aim-assist cone (about 1.7 degrees), because hand and controller aim is shaky.

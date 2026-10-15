@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { Smooth } from './blob.js';
+import { HandModel } from './handmodel.js';
 
 const BASE = import.meta.env.BASE_URL + 'mediapipe/';
 const loadScript = (src) => new Promise((res, rej) => {
@@ -10,20 +12,20 @@ const loadScript = (src) => new Promise((res, rej) => {
 
 /**
  * Hand tracking (MediaPipe Hands, lite model, self-hosted) from the rear camera.
- * The pinch point (thumb tip + index tip midpoint) becomes a pointing ray; pinching = click/drag.
- * Runs on a throttled loop (MediaPipe's own WASM/GL work does not block rendering for long).
+ * The pinch point (thumb tip + index tip midpoint) is a pointing ray from your eyes through your fingers; pinching = select / drag.
+ * A glove-style 3D hand (real-size world landmarks, placed by hand size) is drawn so you can see what is tracked.
  */
 export class HandInput {
   constructor(camera, settings, head) {
     this.camera = camera; this.s = settings; this.head = head;
     this.running = false; this.ready = false; this.busy = false; this.last = 0; this.lastSeen = 0;
-    this.lm = null; this.pos = [0.5, 0.5]; this.pinch = false; this.fps = 0; this.frames = 0; this.t0 = performance.now();
+    this.lm = null; this.wl = null; this.pinch = false; this.fps = 0; this.frames = 0; this.t0 = performance.now();
+    this.aim = new Smooth(2.5, 10);      // pinch point on the image (steady when slow, no lag when fast)
+    this.shape = new Smooth(5, 25);      // 21 joints in metres
     this.pointer = { active: false, origin: new THREE.Vector3(), dir: new THREE.Vector3(0, 0, -1), pressed: false, scroll: 0 };
-    // 21 landmark dots, one draw call, shows your tracked hand
-    this.dots = new THREE.Points(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array(63), 3)),
-      new THREE.PointsMaterial({ color: 0x7cf4ff, size: 0.035, depthTest: false, transparent: true, opacity: 0.9 }));
-    this.dots.renderOrder = 900; this.dots.frustumCulled = false; this.dots.visible = false;
-    head.add(this.dots);
+    this.model = new HandModel();
+    head.add(this.model.group);
+    this.tmp = new THREE.Vector3();
   }
 
   async start() {
@@ -44,7 +46,8 @@ export class HandInput {
     this.running = false; this.ready = false;
     this.camera.release('hands');
     if (this.hands) { try { this.hands.close(); } catch { /* already closed */ } this.hands = null; }
-    this.pointer.active = false; this.pointer.pressed = false; this.dots.visible = false;
+    this.pointer.active = false; this.pointer.pressed = false; this.model.group.visible = false;
+    this.aim.reset(); this.shape.reset();
   }
 
   /** Call every frame: feeds a camera frame to MediaPipe at most ~15 times a second. */
@@ -61,31 +64,40 @@ export class HandInput {
     const L = r.multiHandLandmarks && r.multiHandLandmarks[0];
     const score = r.multiHandedness && r.multiHandedness[0] ? r.multiHandedness[0].score : 1;
     if (!L || score < 0.6) return;
-    const mx = (L[4].x + L[8].x) / 2, my = (L[4].y + L[8].y) / 2;
-    if (now - this.lastSeen > 400) this.pos = [mx, my]; // fresh acquisition: no smoothing lag
-    else { this.pos[0] += (mx - this.pos[0]) * 0.55; this.pos[1] += (my - this.pos[1]) * 0.55; }
-    const size = Math.hypot(L[0].x - L[9].x, L[0].y - L[9].y) || 1;
-    const d = Math.hypot(L[4].x - L[8].x, L[4].y - L[8].y) / size;
-    if (!this.pinch && d < 0.32) this.pinch = true; else if (this.pinch && d > 0.5) this.pinch = false;
-    this.lm = L; this.lastSeen = now;
+    if (now - this.lastSeen > 400) { this.aim.reset(); this.shape.reset(); }
+    const asp = this.camera.aspect, dist = (a, b) => Math.hypot((a.x - b.x) * asp, a.y - b.y); // aspect-correct image distances
+    const d = dist(L[4], L[8]) / (dist(L[0], L[9]) || 1);
+    if (!this.pinch && d < 0.33) this.pinch = true; else if (this.pinch && d > 0.5) this.pinch = false;
+    this.lm = L; this.wl = r.multiHandWorldLandmarks && r.multiHandWorldLandmarks[0]; this.lastSeen = now;
+    this.fresh = true;
   }
 
-  /** Map a camera-image point to a head-local direction (camera FOV is a setting). */
+  /** Map a camera-image point to a tangent-space direction (x, y, -1); camera FOV is a setting. */
   local(x, y, out) {
-    const hf = (this.s.camFov * Math.PI) / 180, a = this.camera.aspect;
-    const vt = Math.tan(hf / 2) / a;
-    return out.set((x - 0.5) * 2 * Math.tan(hf / 2), (0.5 - y) * 2 * vt, -1);
+    const t = Math.tan((this.s.camFov * Math.PI) / 360);
+    return out.set((x - 0.5) * 2 * t, (0.5 - y) * 2 * (t / this.camera.aspect), -1);
   }
 
-  update(headQuat) {
-    const p = this.pointer, seen = performance.now() - this.lastSeen < 400;
-    p.active = this.running && this.ready && seen && !!this.lm;
+  update(headQuat, dt) {
+    const p = this.pointer;
+    p.active = this.running && this.ready && performance.now() - this.lastSeen < 400 && !!this.lm;
     p.pressed = p.active && this.pinch;
-    this.dots.visible = p.active;
-    if (!p.active) return;
-    this.local(this.pos[0], this.pos[1], p.dir).normalize().applyQuaternion(headQuat);
-    const a = this.dots.geometry.attributes.position, v = new THREE.Vector3();
-    this.lm.forEach((q, i) => { this.local(q.x, q.y, v).normalize().multiplyScalar(2.2); a.setXYZ(i, v.x, v.y, v.z); });
-    a.needsUpdate = true;
+    this.model.group.visible = p.active;
+    if (!p.active) { this.shape.reset(); return; }
+    const L = this.lm;
+    const aim = this.aim.update([(L[4].x + L[8].x) / 2, (L[4].y + L[8].y) / 2], Math.min(dt, 0.1));
+    this.local(aim[0], aim[1], p.dir).normalize().applyQuaternion(headQuat);
+    // glove: place the wrist by apparent palm size, then use real-size joint offsets
+    const wl = this.wl, a = this.local(L[0].x, L[0].y, this.tmp.clone()), b = this.local(L[9].x, L[9].y, this.tmp.clone());
+    const palm = wl ? Math.hypot(wl[0].x - wl[9].x, wl[0].y - wl[9].y, wl[0].z - wl[9].z) : 0.09;
+    const depth = Math.min(0.9, Math.max(0.15, palm / Math.max(Math.hypot(a.x - b.x, a.y - b.y), 0.02)));
+    const w0 = [a.x * depth, a.y * depth, -depth], pts = new Array(63);
+    for (let i = 0; i < 21; i++) {
+      const q = this.local(L[i].x, L[i].y, this.tmp);
+      pts[i * 3] = wl ? w0[0] + (wl[i].x - wl[0].x) : q.x * depth;
+      pts[i * 3 + 1] = wl ? w0[1] - (wl[i].y - wl[0].y) : q.y * depth;
+      pts[i * 3 + 2] = wl ? w0[2] - (wl[i].z - wl[0].z) : -depth;
+    }
+    this.model.update(this.shape.update(pts, Math.min(dt, 0.1)), this.pinch);
   }
 }
