@@ -91,26 +91,49 @@ export const pcStream = {
         const conn = (this.conn = peer.connect('vros-' + code, { reliable: true }));
         conn.on('open', () => this.say('Paired', 'Click Allow on the PC…'));
         conn.on('close', () => this.say('PC disconnected', 'Press Reconnect'));
+        conn.on('data', (d) => this.onHost(d)); // native host app: negotiates the video over this data link
       });
-      peer.on('call', (call) => {
+      peer.on('call', (call) => { // browser host page (host.js): PeerJS media call
         this.call = call;
         call.answer();
-        call.on('stream', (s) => {
-          this.video.pause();
-          this.video.removeAttribute('src');
-          this.video.srcObject = s;
-          this.video.muted = false;
-          this.video.play().catch(() => { this.video.muted = true; this.video.play().catch(() => {}); }); // no sound if blocked
-          this.screen.material.color.setHex(0xffffff);
-          this.say('Streaming', 'getting stats…');
-        });
+        call.on('stream', (s) => this.show(s));
         call.on('close', () => this.say('Stream ended', 'Press Reconnect'));
       });
       peer.on('error', (e) => this.say(e.type === 'peer-unavailable' ? 'PC not found' : 'Connection error', e.type === 'peer-unavailable' ? 'Is the host page open? Code correct?' : String(e.type || e)));
     } catch (e) { this.say('Could not start', e.message); }
   },
 
+  show(s) {
+    this.video.pause();
+    this.video.removeAttribute('src');
+    this.video.srcObject = s;
+    this.video.muted = false;
+    this.video.play().catch(() => { this.video.muted = true; this.video.play().catch(() => {}); }); // no sound if blocked
+    this.screen.material.color.setHex(0xffffff);
+    this.say('Streaming', 'getting stats…');
+  },
+
+  /** Messages from the native PC host app: WebRTC offer / ICE candidates / errors. */
+  async onHost(d) {
+    if (!d || this.closed) return;
+    if (d.t === 'error') { this.say('PC host error', String(d.msg).slice(0, 60)); return; }
+    if (d.t === 'offer') {
+      if (this.rtc) this.rtc.close();
+      const pc = (this.rtc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }));
+      this.call = { peerConnection: pc, close: () => pc.close() }; // stats() reads call.peerConnection
+      pc.onicecandidate = (e) => { if (e.candidate && this.conn && this.conn.open) this.conn.send({ t: 'ice', c: e.candidate.candidate, mid: e.candidate.sdpMid }); };
+      pc.ontrack = (e) => this.show(e.streams[0] || new MediaStream([e.track]));
+      pc.onconnectionstatechange = () => { if (pc.connectionState === 'failed') this.say('Stream failed', 'Press Reconnect'); };
+      await pc.setRemoteDescription({ type: 'offer', sdp: d.sdp });
+      await pc.setLocalDescription(await pc.createAnswer());
+      this.conn.send({ t: 'answer', sdp: pc.localDescription.sdp });
+    } else if (d.t === 'ice' && this.rtc) {
+      this.rtc.addIceCandidate({ candidate: d.c, sdpMid: d.mid }).catch(() => {});
+    }
+  },
+
   stop() {
+    if (this.rtc) { this.rtc.close(); this.rtc = null; }
     if (this.call) this.call.close();
     if (this.conn) this.conn.close();
     if (this.peer) this.peer.destroy();

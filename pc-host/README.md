@@ -1,3 +1,5 @@
+> **New:** a low-RAM Windows installer (no browser tab) lives in `../pc-host-app`. This older Chrome-based host is kept for audio and for macOS/Linux.
+
 # VR OS PC host
 
 Streams your PC screen (and audio) to the VR OS **PC Stream** app and lets the headset move the mouse, click, scroll and type.

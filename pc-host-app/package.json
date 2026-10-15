@@ -1,0 +1,25 @@
+{
+  "name": "vros-host",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "VR OS PC host: low-RAM screen streaming, input injection and Joy-Con relay for the VR OS headset app",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js",
+    "test": "node test/fusion.test.mjs && node test/joycon.test.mjs && node test/stream.smoke.mjs && node test/loopback.test.mjs"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.2.0",
+    "node-datachannel": "^0.33.4",
+    "peerjs": "^1.5.5",
+    "ws": "^8.18.0"
+  },
+  "optionalDependencies": {
+    "koffi": "^2.9.0",
+    "node-hid": "^3.1.0"
+  },
+  "devDependencies": {
+    "peer": "^1.0.2"
+  }
+}

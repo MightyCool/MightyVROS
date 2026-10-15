@@ -2,7 +2,7 @@
 """VR OS PC helper: serves the host page on http://localhost:8765 and applies mouse/keyboard input from the headset.
 Setup: pip install pyautogui     Run: python host.py
 Optional Joy-Con relay (IMU + buttons to the headset): pip install joycon-python hidapi, pair the Joy-Cons to this PC by Bluetooth first."""
-import json, os, sys, threading, time
+import json, math, os, sys, threading, time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 try:
@@ -56,8 +56,8 @@ def start_joycons():
         fus = Fusion()
 
         def hook(j, side=side, fus=fus):
-            for a, g in zip(j.accel_in_g, j.gyro_in_rad):
-                fus.update(g, a, 1 / 180)
+            for a, g in zip(j.accel_in_g, j.gyro_in_deg):   # degrees x pi/180: joycon-python's gyro_in_rad constant looks half the nominal 0.061 deg/s per LSB
+                fus.update([math.radians(v) for v in g], a, 1 / 180)
             sx, sy = j.stick_l if side == 'L' else j.stick_r
             JOY[side] = {
                 'q': fus.xyzw(),

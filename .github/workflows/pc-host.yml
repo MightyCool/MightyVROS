@@ -1,0 +1,38 @@
+name: Build PC host installer
+on:
+  push:
+    tags: ['host-v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: pc-host-app/package-lock.json
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+      - name: Test (fusion maths)
+        working-directory: pc-host-app
+        run: |
+          npm ci
+          node test/fusion.test.mjs
+      - name: Build installer
+        shell: pwsh
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: ./pc-host-app/installer/build.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VR-OS-Host-Setup
+          path: pc-host-app/out/VR-OS-Host-Setup.exe
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/host-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: pc-host-app/out/VR-OS-Host-Setup.exe

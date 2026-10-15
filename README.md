@@ -31,3 +31,7 @@ PC stream (2), hand tracking (3), Settings/Browser/AR apps, audio, NoSleep (4).
   Hold a hand in front of the phone's rear camera: pinch (thumb + index) to click, pinch and drag to scroll the browser page.
   The cursor sits at the pinch point. Gaze still works whenever no hand is seen. Set "Camera field of view" so the hand lines up with the passthrough image.
 - **Joy-Cons**: see pc-host/README.md. Open the **Controllers** app to link, calibrate colour (camera) and pose (gravity), then use ZR/R (right) or ZL/L (left) to click and the stick to scroll.
+
+## PC host
+- **Windows installer (recommended, low RAM):** `pc-host-app/` builds `VR-OS-Host-Setup.exe` through GitHub Actions (tag `host-v1.0.0`). See `pc-host-app/README.md`.
+- Older Chrome-based host with audio: `pc-host/`.
