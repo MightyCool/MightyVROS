@@ -1,4 +1,4 @@
-' Starts the VR OS Host with no console window. Pass --no-open to skip opening the control page.
+' Starts the MightyVR Host with no console window. Pass --no-open to skip opening the control page.
 Set sh = CreateObject("WScript.Shell")
 Set fso = CreateObject("Scripting.FileSystemObject")
 dir = fso.GetParentFolderName(WScript.ScriptFullName)

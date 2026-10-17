@@ -29,10 +29,10 @@ jobs:
         run: ./pc-host-app/installer/build.ps1
       - uses: actions/upload-artifact@v4
         with:
-          name: VR-OS-Host-Setup
-          path: pc-host-app/out/VR-OS-Host-Setup.exe
+          name: MightyVR-Host-Setup
+          path: pc-host-app/out/MightyVR-Host-Setup.exe
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/host-v')
         uses: softprops/action-gh-release@v2
         with:
-          files: pc-host-app/out/VR-OS-Host-Setup.exe
+          files: pc-host-app/out/MightyVR-Host-Setup.exe

@@ -1,4 +1,4 @@
-# Builds out\VR-OS-Host-Setup.exe (Windows, needs Node 22+ and Inno Setup 6). Used by .github/workflows/pc-host.yml.
+# Builds out\MightyVR-Host-Setup.exe (Windows, needs Node 22+ and Inno Setup 6). Used by .github/workflows/pc-host.yml.
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $stage = Join-Path $root 'stage'
@@ -25,7 +25,7 @@ foreach ($f in 'node.exe', 'app\node_modules\ffmpeg-static\ffmpeg.exe', 'app\src
 }
 $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
 if (-not (Test-Path $iscc)) { $iscc = (Get-Command iscc -ErrorAction Stop).Source }
-& $iscc "/DVersion=$version" installer\vros-host.iss
+& $iscc "/DVersion=$version" installer\mightyvr-host.iss
 if ($LASTEXITCODE) { throw 'Inno Setup failed' }
 Pop-Location
-Write-Host "Built $root\out\VR-OS-Host-Setup.exe"
+Write-Host "Built $root\out\MightyVR-Host-Setup.exe"

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""VR OS PC helper: serves the host page on http://localhost:8765 and applies mouse/keyboard input from the headset.
+"""MightyVR PC helper: serves the host page on http://localhost:8765 and applies mouse/keyboard input from the headset.
 Setup: pip install pyautogui     Run: python host.py
 Optional Joy-Con relay (IMU + buttons to the headset): pip install joycon-python hidapi, pair the Joy-Cons to this PC by Bluetooth first."""
 import json, math, os, sys, threading, time

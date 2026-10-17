@@ -72,6 +72,7 @@ function boot() {
     try { await pt.set(on); } catch (e) { launcher.toast('Camera unavailable: ' + (e.message || e.name)); }
     settings.passthrough = pt.on;
     room.visible = !pt.on; // passthrough replaces the virtual room
+    launcher.setTable(!pt.on); // ...and the dock's table
   };
 
   const launcher = new Launcher(scene, {

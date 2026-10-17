@@ -20,6 +20,6 @@ try {
 }
 await host.start();
 open();
-if (process.env.VROS_DEBUG) console.log(`VR OS Host running at ${url}  code ${host.code}`);
+if (process.env.VROS_DEBUG) console.log(`MightyVR Host running at ${url}  code ${host.code}`);
 process.on('SIGINT', () => { host.quit(); srv.close(); process.exit(0); });
 process.on('SIGTERM', () => { host.quit(); srv.close(); process.exit(0); });

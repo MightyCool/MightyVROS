@@ -6,7 +6,7 @@ export class VideoSender {
     this.send = send; this.log = log;
     this.t0 = performance.now();
     this.frames = 0; this.bytes = 0;
-    this.pc = new nd.PeerConnection('vros-host', { iceServers: process.env.VROS_NO_STUN ? [] : ['stun:stun.l.google.com:19302'] });
+    this.pc = new nd.PeerConnection('mightyvr-host', { iceServers: process.env.VROS_NO_STUN ? [] : ['stun:stun.l.google.com:19302'] });
     const ssrc = 42;
     const video = new nd.Video('video', 'SendOnly');
     video.addH264Codec(96, 'level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=42e01f');

@@ -27,7 +27,7 @@ export class Launcher {
       w: 4.2, h: 1.8, y: 0.25, px: 1024,
       draw: (g, w, h) => {
         card(g, w, h);
-        text(g, 'VR OS', w / 2, h * 0.3, 120, { weight: '700' });
+        text(g, 'MightyVR', w / 2, h * 0.3, 120, { weight: '700' });
         text(g, 'Look at an app and hold your gaze to open it', w / 2, h * 0.5, 42, { color: '#9fb0d8' });
       },
     }));
@@ -38,11 +38,12 @@ export class Launcher {
 
     // 3D dock: a wooden console table with app cubes that lift toward you when gazed at
     const wood = new THREE.MeshLambertMaterial({ color: 0x8b6b4a });
+    this.table = new THREE.Group(); this.home.add(this.table); // hidden while passthrough is on
     const top = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.08, 0.8), wood);
-    top.position.set(0, -1.1, -2.55); this.home.add(top);
+    top.position.set(0, -1.1, -2.55); this.table.add(top);
     [[-1.45, -2.25], [1.45, -2.25], [-1.45, -2.85], [1.45, -2.85]].forEach(([x, z]) => {
       const l = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.46, 0.08), wood);
-      l.position.set(x, -1.37, z); this.home.add(l);
+      l.position.set(x, -1.37, z); this.table.add(l);
     });
     this.cubes = [];
     const glowTex = canvasTex(64, 64, (g, w, h) => {
@@ -85,12 +86,15 @@ export class Launcher {
 
   addHomeButton(label, angle, onClick) {
     const b = makePanel({
-      w: 0.85, h: 0.34, r: R - 0.03, angle, y: -0.15, px: 256, interactive: true,
+      w: 0.85, h: 0.34, r: R - 0.03, angle, y: -0.15, px: 256, interactive: true, hl: false, // no hover effect on the main menu
       draw: (g, w, h) => { card(g, w, h, 'rgba(79,124,255,.55)', 40); text(g, label, w / 2, h / 2, 40, { weight: '600' }); },
       onClick,
     });
+    b.userData.mats = []; // and no colour tint either; the gaze ring shows progress
     this.home.add(b); this.homeBtns.push(b);
   }
+
+  setTable(on) { this.table.visible = on; }
 
   openApp(app) {
     if (this.win) return;

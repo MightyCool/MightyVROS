@@ -1,4 +1,4 @@
-/* VR OS PC host: streams the screen to the headset phone (WebRTC, PeerJS cloud only for pairing)
+/* MightyVR PC host: streams the screen to the headset phone (WebRTC, PeerJS cloud only for pairing)
    and forwards the headset's mouse/keyboard messages to the local helper (host.py). */
 const $ = (id) => document.getElementById(id);
 const ABC = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';

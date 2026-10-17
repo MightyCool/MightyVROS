@@ -1,8 +1,8 @@
 > **New:** a low-RAM Windows installer (no browser tab) lives in `../pc-host-app`. This older Chrome-based host is kept for audio and for macOS/Linux.
 
-# VR OS PC host
+# MightyVR PC host
 
-Streams your PC screen (and audio) to the VR OS **PC Stream** app and lets the headset move the mouse, click, scroll and type.
+Streams your PC screen (and audio) to the MightyVR **PC Stream** app and lets the headset move the mouse, click, scroll and type.
 This is how you get a full browser (YouTube etc.) in VR: run Chrome on the PC, control it from the headset.
 
 ## Setup (once)

@@ -1,10 +1,10 @@
 import http from 'node:http';
 
-const PAGE = `<!doctype html><meta charset="utf-8"><title>VR OS Host</title><meta name="viewport" content="width=device-width,initial-scale=1">
+const PAGE = `<!doctype html><meta charset="utf-8"><title>MightyVR Host</title><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>body{font:16px system-ui,sans-serif;background:#0b0f1a;color:#e8edff;max-width:560px;margin:32px auto;padding:0 16px}
 button,select{font-size:16px;padding:8px 14px;border-radius:8px;border:0;margin:4px 4px 4px 0}button{background:#4f7cff;color:#fff}button.no{background:#555}
 #code{font:700 56px monospace;letter-spacing:8px;color:#7CFC9A;margin:8px 0}.dim{color:#9fb0d8}#ask{background:#1b2547;padding:12px;border-radius:10px;margin:12px 0}</style>
-<h1>VR OS Host</h1><div class="dim">Type this code on the headset's start screen:</div><div id="code">······</div>
+<h1>MightyVR Host</h1><div class="dim">Type this code on the headset's start screen:</div><div id="code">······</div>
 <div id="ask" hidden>Headset <b id="who"></b> wants to connect. <button id="allow">Allow</button><button id="deny" class="no">Deny</button></div>
 <div id="info" class="dim"></div><pre id="log" class="dim"></pre>
 <div>Resolution <select id="w"><option value="1280">720p</option><option value="1600">900p</option><option value="1920">1080p</option></select>

@@ -1,9 +1,9 @@
-# VR OS (stage 1: stereo + head tracking + gaze launcher)
+# MightyVR (stage 1: stereo + head tracking + gaze launcher)
 
-Browser VR OS for iPhone 7 + Cardboard-style headset. No WebXR: manual side-by-side stereo with barrel distortion.
+Browser MightyVR for iPhone 7 + Cardboard-style headset. No WebXR: manual side-by-side stereo with barrel distortion.
 
 ## Deploy to GitHub Pages
-1. Create a new GitHub repo (e.g. `vr-os`) and push this folder to its `main` branch.
+1. Create a new GitHub repo (e.g. `mightyvr`) and push this folder to its `main` branch.
 2. Repo **Settings → Pages → Build and deployment → Source: GitHub Actions**.
 3. Push to `main` (or Actions tab → "Deploy to GitHub Pages" → Run workflow). Wait for green.
 4. On the iPhone open `https://<user>.github.io/<repo>/` in Safari (HTTPS is required for motion sensors).
@@ -33,7 +33,7 @@ PC stream (2), hand tracking (3), Settings/Browser/AR apps, audio, NoSleep (4).
 - **Joy-Cons**: see pc-host/README.md. Open the **Controllers** app to link, calibrate colour (camera) and pose (gravity), then use ZR/R (right) or ZL/L (left) to click and the stick to scroll.
 
 ## PC host
-- **Windows installer (recommended, low RAM):** `pc-host-app/` builds `VR-OS-Host-Setup.exe` through GitHub Actions (tag `host-v1.0.0`). See `pc-host-app/README.md`.
+- **Windows installer (recommended, low RAM):** `pc-host-app/` builds `MightyVR-Host-Setup.exe` through GitHub Actions (tag `host-v1.0.0`). See `pc-host-app/README.md`.
 - Older Chrome-based host with audio: `pc-host/`.
 
 ## Selecting with hands and controllers

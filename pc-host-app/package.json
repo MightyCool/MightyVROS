@@ -1,9 +1,9 @@
 {
-  "name": "vros-host",
+  "name": "mightyvr-host",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "VR OS PC host: low-RAM screen streaming, input injection and Joy-Con relay for the VR OS headset app",
+  "description": "MightyVR PC host: low-RAM screen streaming, input injection and Joy-Con relay for the MightyVR headset app",
   "main": "src/main.js",
   "scripts": {
     "start": "node src/main.js",

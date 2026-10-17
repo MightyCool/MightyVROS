@@ -1,6 +1,6 @@
 {
-  "name": "VR OS",
-  "short_name": "VR OS",
+  "name": "MightyVR",
+  "short_name": "MightyVR",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

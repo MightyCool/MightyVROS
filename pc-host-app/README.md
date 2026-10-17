@@ -1,18 +1,18 @@
-# VR OS Host (Windows installer, low RAM)
+# MightyVR Host (Windows installer, low RAM)
 
-A small background program that streams your PC screen to the VR OS headset app, lets the headset move the mouse and type,
+A small background program that streams your PC screen to the MightyVR headset app, lets the headset move the mouse and type,
 and relays Joy-Con controllers. It replaces the Chrome tab of the older `pc-host` folder (still there if you need audio or macOS/Linux).
 
 ## Install
-1. Open this repo's **Releases** page and download `VR-OS-Host-Setup.exe` (see "Building the installer" if there is none yet).
+1. Open this repo's **Releases** page and download `MightyVR-Host-Setup.exe` (see "Building the installer" if there is none yet).
 2. Run it (no admin rights needed). Tick "Start with Windows" if you want it always available.
 3. Windows Firewall may ask about `node.exe` the first time: allow **Private networks** (video travels directly to the phone over your Wi-Fi).
 
 ## Use
-1. Start Menu > **VR OS Host**. A small page opens with a 6-character code (you can close the tab; the host keeps running).
+1. Start Menu > **MightyVR Host**. A small page opens with a 6-character code (you can close the tab; the host keeps running).
 2. On the headset start screen type the code, tap Enter VR, open **PC Stream**.
 3. Click **Allow** on the PC page when the headset asks. Resolution/bitrate are on that page (720p, 4 Mbps suits an iPhone 7).
-4. Start Menu > **Stop VR OS Host** (or the Quit button) when done.
+4. Start Menu > **Stop MightyVR Host** (or the Quit button) when done.
 
 ## What it uses
 - Memory: about 100 MB for the program + 40 to 90 MB for the video encoder process (ffmpeg). Measured on a Linux test machine with the software encoder; on Windows it tries a hardware encoder first (NVENC, Quick Sync, AMF) which uses less.
@@ -25,7 +25,7 @@ and relays Joy-Con controllers. It replaces the Chrome tab of the older `pc-host
 Audio (use the old Chrome host for sound), multiple monitors (primary only), macOS/Linux installer (the program runs there with `npm start`, streaming only).
 
 ## Building the installer
-Push a tag such as `host-v1.0.0` (or run the **Build PC host installer** workflow by hand): GitHub Actions builds `VR-OS-Host-Setup.exe` on a Windows runner and attaches it to the release.
+Push a tag such as `host-v1.0.0` (or run the **Build PC host installer** workflow by hand): GitHub Actions builds `MightyVR-Host-Setup.exe` on a Windows runner and attaches it to the release.
 Locally on Windows: install Node 22 and Inno Setup 6, then run `installer\build.ps1`.
 
 ## Tests (any OS)
