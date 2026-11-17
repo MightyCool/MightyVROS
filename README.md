@@ -18,24 +18,28 @@ Pull requests run lint + build (`.github/workflows/ci.yml`).
 - Gaze at an icon ~1.2 s to click. **Recenter** / **Debug** buttons on the home panel. Two-finger tap = FPS overlay (or `?debug`).
 - Dynamic resolution drops render scale (min 50%) if FPS < 45. Pixel ratio capped at 1.5.
 
-## Not yet (later stages)
-PC stream (2), hand tracking (3), Settings/Browser/AR apps, audio, NoSleep (4).
-
 ## Settings / camera notes
 - Settings app: resolution, render scale, anti-aliasing, sharpen, FOV, IPD, gaze click time, 12/24-hour clock, passthrough camera + size.
 - No software lens warping: your headset lenses do the distortion.
 - Passthrough ("Camera" button on the home panel or Settings): rear camera behind the UI, same image in both eyes (no depth). Needs camera permission.
 
-## Hand tracking and controllers
-- **Hand tracking** (Settings > Input > Hand tracking): MediaPipe Hands (lite model), self-hosted and cached on first use (~19 MB, copied from `node_modules` at build time).
-  Hold a hand in front of the phone's rear camera: pinch (thumb + index) to click, pinch and drag to scroll the browser page.
-  The cursor sits at the pinch point. Gaze still works whenever no hand is seen. Set "Camera field of view" so the hand lines up with the passthrough image.
-- **Joy-Cons**: see pc-host/README.md. Open the **Controllers** app to link, calibrate colour (camera) and pose (gravity), then use ZR/R (right) or ZL/L (left) to click and the stick to scroll.
+## Hand tracking
+- Settings > Input > Hand tracking (uses the rear camera; MediaPipe Hands lite model, self-hosted, cached on first use, about 19 MB).
+- Pinch thumb + index to select; pinch and drag to scroll the browser page. While your fingers close, the pointer holds still and only follows your knuckles, so clicks land where you aimed.
+- Light on the phone: 30 inferences a second while a hand is tracked, 10 a second while searching, automatically fewer if rendering dips under 50 fps or inference is slow; the camera runs at 540p.
+- The glove hand can be hidden (Settings > Input > Show hand model). "Camera field of view" lines the glove up with passthrough.
+
+## AR Game
+Opens with the camera on (passthrough) and hand tracking started. Look slowly around you: dots turn green as directions are scanned (this maps directions only; iPhone Safari has no depth or surface sensing, so targets float rather than sit on real surfaces).
+Then pinch, pull your hand back toward your face to draw, and release to shoot. Without hand tracking, look at a target for about half a second and an arrow flies at it.
+
+## Pixel scale
+Home menu and Settings > Display. 2x is the iPhone 7's native resolution; higher values supersample (sharper, heavier). Auto render scale still lowers the load if the frame rate drops.
 
 ## PC host
 - **Windows installer (recommended, low RAM):** `pc-host-app/` builds `MightyVR-Host-Setup.exe` through GitHub Actions (tag `host-v1.0.0`). See `pc-host-app/README.md`.
 - Older Chrome-based host with audio: `pc-host/`.
 
-## Selecting with hands and controllers
-- Hand: pinch thumb + index (the glove shows a cyan fingertip when it registers). Controller: ZR, R or A (right Joy-Con); ZL, L or D-pad down (left Joy-Con).
-- The pointer dot has a small aim-assist cone (about 1.7 degrees), because hand and controller aim is shaky.
+## Selecting with your hand
+- Hand: pinch thumb + index (the glove shows a cyan fingertip when it registers).
+- The pointer dot has a small aim-assist cone (about 1.7 degrees), because hand aim is shaky.
