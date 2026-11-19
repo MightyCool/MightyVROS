@@ -25,11 +25,30 @@ body.web #gl{visibility:hidden}
 #pcv,#ptv{position:fixed;left:-9999px;width:2px;height:2px}
 [hidden]{display:none!important}
 #msg{color:#ffb86b;min-height:1.2em}
+#err{position:fixed;left:0;right:0;top:0;z-index:20;background:#b3261e;color:#fff;padding:10px 14px;font:14px/1.35 system-ui,sans-serif;white-space:pre-wrap;word-break:break-word;max-height:60%;overflow:auto}
+@media (max-height:460px){#intro{justify-content:flex-start;gap:6px;padding:8px}#intro h1{font-size:20px}#intro ul{display:none}#intro p{font-size:12px}#start{padding:8px 24px;font-size:18px}}
 #rotate{display:none;position:fixed;inset:0;z-index:9;background:#0b0f1a;align-items:center;justify-content:center;font-size:22px}
 @media (orientation:portrait){body.running #rotate{display:flex}}
 </style>
 </head>
 <body>
+<div id="err" hidden></div>
+<script>
+// Visible error reporting + start-up watchdog (runs even if the app's own code never loads)
+(function () {
+  var show = function (t) { var b = document.getElementById('err'); b.textContent = t; b.hidden = false; };
+  window.__mvrBanner = show;
+  window.addEventListener('error', function (e) {
+    var t = e.target;
+    if (t && (t.src || t.href)) show('A file failed to load: ' + (t.src || t.href) + '\nThe site may be deployed from the wrong source (see README: Settings > Pages > Source = GitHub Actions).');
+    else show('Error: ' + (e.message || 'unknown') + (e.filename ? '\n' + String(e.filename).split('/').pop() + ':' + e.lineno : ''));
+  }, true);
+  window.addEventListener('unhandledrejection', function (e) { show('Error: ' + ((e.reason && e.reason.message) || e.reason)); });
+  setTimeout(function () {
+    if (!window.__mvr) show('MightyVR did not start: its code did not load.\nIf you use GitHub Pages: repo Settings > Pages > Source must be "GitHub Actions" (not "Deploy from a branch"); then re-run the Deploy workflow in the Actions tab.');
+  }, 3000);
+})();
+</script>
 <canvas id="gl"></canvas>
 <div id="hud" hidden></div>
 <video id="pcv" playsinline autoplay></video>
